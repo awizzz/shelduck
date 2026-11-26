@@ -1,7 +1,7 @@
 //! What the page needs to know about the system before its first line runs.
 
-/// Sets `window.__NEBULA_PLATFORM__` ("windows", "linux" or "macos") and
-/// `window.__NEBULA_HOST__`, this machine's name, which tells its own folders from a
+/// Sets `window.__SHELDUCK_PLATFORM__` ("windows", "linux" or "macos") and
+/// `window.__SHELDUCK_HOST__`, this machine's name, which tells its own folders from a
 /// server's in the folder reports (OSC 7) shells send.
 pub fn page_script() -> String {
     let platform = if cfg!(windows) {
@@ -12,7 +12,7 @@ pub fn page_script() -> String {
         "linux"
     };
     let host = serde_json::to_string(&hostname()).unwrap_or_else(|_| "\"\"".to_owned());
-    format!("window.__NEBULA_PLATFORM__ = \"{platform}\"; window.__NEBULA_HOST__ = {host};")
+    format!("window.__SHELDUCK_PLATFORM__ = \"{platform}\"; window.__SHELDUCK_HOST__ = {host};")
 }
 
 /// WebKitGTK's DMA-BUF renderer leaves the window blank with NVIDIA's own driver; the
@@ -89,22 +89,25 @@ mod tests {
     #[test]
     fn takes_the_appimage_out_of_the_environment() {
         let variables = [
-            ("APPDIR", "/tmp/.mount_NebulaX"),
-            ("APPIMAGE", "/home/me/Nebula.AppImage"),
+            ("APPDIR", "/tmp/.mount_ShelduckX"),
+            ("APPIMAGE", "/home/me/Shelduck.AppImage"),
             (
                 "PATH",
-                "/tmp/.mount_NebulaX/usr/bin:/usr/local/bin:/usr/bin",
+                "/tmp/.mount_ShelduckX/usr/bin:/usr/local/bin:/usr/bin",
             ),
-            ("XDG_DATA_DIRS", "/tmp/.mount_NebulaX/usr/share:/usr/share"),
+            (
+                "XDG_DATA_DIRS",
+                "/tmp/.mount_ShelduckX/usr/share:/usr/share",
+            ),
             (
                 "GDK_PIXBUF_MODULE_FILE",
-                "/tmp/.mount_NebulaX/usr/lib/loaders.cache",
+                "/tmp/.mount_ShelduckX/usr/lib/loaders.cache",
             ),
             ("GTK_THEME", "Adwaita:light"),
             ("HOME", "/home/me"),
         ]
         .map(|(name, value)| (name.to_owned(), value.to_owned()));
-        let changes = super::without_appdir(variables.into_iter(), "/tmp/.mount_NebulaX");
+        let changes = super::without_appdir(variables.into_iter(), "/tmp/.mount_ShelduckX");
         let change = |name: &str| {
             changes
                 .iter()
@@ -123,7 +126,7 @@ mod tests {
     #[test]
     fn names_the_platform_and_host() {
         let script = super::page_script();
-        assert!(script.starts_with("window.__NEBULA_PLATFORM__ = \""));
-        assert!(script.contains("window.__NEBULA_HOST__ = \""));
+        assert!(script.starts_with("window.__SHELDUCK_PLATFORM__ = \""));
+        assert!(script.contains("window.__SHELDUCK_HOST__ = \""));
     }
 }

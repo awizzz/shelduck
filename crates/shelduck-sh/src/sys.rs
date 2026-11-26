@@ -1,0 +1,302 @@
+//! Platform helpers: home directory, path display and translation, PATH lookup.
+
+use std::collections::BTreeSet;
+use std::env;
+use std::path::{Path, PathBuf};
+
+pub fn home() -> Option<PathBuf> {
+    env::var_os("HOME")
+        .or_else(|| env::var_os("USERPROFILE"))
+        .map(PathBuf::from)
+}
+
+/// A path as shown in the prompt and titles: `~` for home, forward slashes, and
+/// Git Bash style drive prefixes (`/c/Windows`) on Windows.
+pub fn display_path(path: &Path) -> String {
+    let mut text = path.to_string_lossy().into_owned();
+    if let Some(stripped) = text.strip_prefix(r"\\?\") {
+        text = stripped.to_owned();
+    }
+    if let Some(home) = home() {
+        let home = home.to_string_lossy().into_owned();
+        let matches_home = if cfg!(windows) {
+            text.to_lowercase().starts_with(&home.to_lowercase())
+        } else {
+            text.starts_with(&home)
+        };
+        if matches_home
+            && (text.len() == home.len()
+                || matches!(text.as_bytes().get(home.len()), Some(b'/' | b'\\')))
+        {
+            text = format!("~{}", &text[home.len()..]);
+        }
+    }
+    if cfg!(windows) {
+        text = text.replace('\\', "/");
+        let bytes = text.as_bytes();
+        if bytes.len() >= 2 && bytes[1] == b':' && bytes[0].is_ascii_alphabetic() {
+            let drive = (bytes[0] as char).to_ascii_lowercase();
+            let rest = text[2..].trim_end_matches('/');
+            text = format!("/{drive}{rest}");
+        }
+    }
+    text
+}
+
+/// Translates Linux-style paths for Shelduck's own commands on Windows:
+/// `/c/Users` → `C:/Users`, `/dev/null` → `NUL`. Other arguments pass through.
+pub fn translate_path(arg: &str) -> String {
+    if !cfg!(windows) {
+        return arg.to_owned();
+    }
+    if arg == "/dev/null" {
+        return "NUL".to_owned();
+    }
+    let bytes = arg.as_bytes();
+    if bytes.len() >= 2
+        && bytes[0] == b'/'
+        && bytes[1].is_ascii_alphabetic()
+        && (bytes.len() == 2 || bytes[2] == b'/')
+    {
+        let drive = (bytes[1] as char).to_ascii_uppercase();
+        let rest = if bytes.len() == 2 { "/" } else { &arg[2..] };
+        return format!("{drive}:{rest}");
+    }
+    arg.to_owned()
+}
+
+fn path_extensions() -> Vec<String> {
+    if !cfg!(windows) {
+        return vec![String::new()];
+    }
+    let mut extensions: Vec<String> = env::var("PATHEXT")
+        .unwrap_or_else(|_| ".COM;.EXE;.BAT;.CMD".into())
+        .split(';')
+        .filter(|item| !item.is_empty())
+        .map(str::to_ascii_lowercase)
+        .collect();
+    extensions.push(".ps1".into());
+    extensions
+}
+
+#[cfg(unix)]
+fn is_executable(path: &Path) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    path.metadata()
+        .is_ok_and(|meta| meta.is_file() && meta.permissions().mode() & 0o111 != 0)
+}
+
+#[cfg(not(unix))]
+fn is_executable(path: &Path) -> bool {
+    path.is_file()
+}
+
+/// Finds an executable by name: a path is used as is, a bare name is looked up in PATH.
+pub fn find_executable(name: &str) -> Option<PathBuf> {
+    let candidate = Path::new(name);
+    let extensions = path_extensions();
+    let with_extensions = |base: &Path| -> Option<PathBuf> {
+        if base.extension().is_some() && is_executable(base) {
+            return Some(base.to_path_buf());
+        }
+        extensions.iter().find_map(|ext| {
+            let path = if ext.is_empty() {
+                base.to_path_buf()
+            } else {
+                PathBuf::from(format!("{}{ext}", base.display()))
+            };
+            is_executable(&path).then_some(path)
+        })
+    };
+    if name.contains('/') || name.contains('\\') {
+        return with_extensions(candidate);
+    }
+    env::split_paths(&env::var_os("PATH")?).find_map(|dir| with_extensions(&dir.join(name)))
+}
+
+/// Names of every executable on PATH, without extensions (for completion and highlighting).
+pub fn path_commands() -> BTreeSet<String> {
+    let extensions = path_extensions();
+    let mut names = BTreeSet::new();
+    let Some(path) = env::var_os("PATH") else {
+        return names;
+    };
+    for dir in env::split_paths(&path) {
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            if cfg!(windows) {
+                let lower = name.to_ascii_lowercase();
+                if let Some(ext) = extensions
+                    .iter()
+                    .find(|ext| !ext.is_empty() && lower.ends_with(ext.as_str()))
+                {
+                    names.insert(name[..name.len() - ext.len()].to_owned());
+                }
+            } else if is_executable(&entry.path()) {
+                names.insert(name);
+            }
+        }
+    }
+    names
+}
+
+/// Turns on ANSI escape processing for the console (needed on Windows 10).
+pub fn enable_ansi() {
+    #[cfg(windows)]
+    {
+        let _ = nu_ansi_term::enable_ansi_support();
+    }
+}
+
+/// True when icons can be drawn: Shelduck bundles a Nerd Font, and
+/// `SHELDUCK_ICONS=1/0` forces the choice elsewhere.
+pub fn icons_enabled() -> bool {
+    match setting("ICONS").as_deref() {
+        Some("1") => true,
+        Some("0") => false,
+        _ => in_shelduck(),
+    }
+}
+
+/// `SHELDUCK_<name>`, or `NEBULA_<name>`: the app was Nebula Terminal before 3.0, and
+/// the files people wrote for it still set the variables it read.
+pub fn setting(name: &str) -> Option<String> {
+    env::var(format!("SHELDUCK_{name}"))
+        .or_else(|_| env::var(format!("NEBULA_{name}")))
+        .ok()
+}
+
+/// True in a Shelduck tab. Older versions of the app announce themselves by their former name.
+pub fn in_shelduck() -> bool {
+    env::var_os("SHELDUCK_TERMINAL").is_some() || env::var_os("NEBULA_TERMINAL").is_some()
+}
+
+/// `~/<name>`, or the same file under the name it had before 3.0 when only that one exists.
+pub fn home_file(name: &str, former: &str) -> Option<PathBuf> {
+    let home = home()?;
+    let file = home.join(name);
+    if file.is_file() {
+        return Some(file);
+    }
+    let former = home.join(former);
+    Some(if former.is_file() { former } else { file })
+}
+
+/// Whether this shell runs as administrator (an elevated token), for the prompt's `admin` segment.
+pub fn is_elevated() -> bool {
+    static ELEVATED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *ELEVATED.get_or_init(elevated_token)
+}
+
+#[cfg(windows)]
+fn elevated_token() -> bool {
+    use windows_sys::Win32::{
+        Foundation::{CloseHandle, HANDLE},
+        Security::{GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY},
+        System::Threading::{GetCurrentProcess, OpenProcessToken},
+    };
+    let mut token: HANDLE = std::ptr::null_mut();
+    let mut elevation = TOKEN_ELEVATION { TokenIsElevated: 0 };
+    let mut size = 0u32;
+    // SAFETY: the token is opened and closed here, and TOKEN_ELEVATION is the size passed.
+    unsafe {
+        if OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token) == 0 {
+            return false;
+        }
+        let read = GetTokenInformation(
+            token,
+            TokenElevation,
+            std::ptr::from_mut(&mut elevation).cast(),
+            std::mem::size_of::<TOKEN_ELEVATION>() as u32,
+            &mut size,
+        );
+        CloseHandle(token);
+        read != 0 && elevation.TokenIsElevated != 0
+    }
+}
+
+#[cfg(not(windows))]
+fn elevated_token() -> bool {
+    false
+}
+
+pub fn terminal_width() -> usize {
+    terminal_size::terminal_size()
+        .map(|(width, _)| usize::from(width.0))
+        .filter(|w| *w > 0)
+        .unwrap_or(80)
+}
+
+/// Where Shelduck keeps its history and folder ranks: `%APPDATA%\Shelduck` on Windows.
+pub fn data_dir() -> PathBuf {
+    let base = if cfg!(windows) {
+        std::env::var_os("APPDATA")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| home().unwrap_or_default())
+    } else {
+        std::env::var_os("XDG_DATA_HOME")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| home().unwrap_or_default().join(".local/share"))
+    };
+    base.join(if cfg!(windows) {
+        "Shelduck"
+    } else {
+        "shelduck"
+    })
+}
+
+/// A file of [`data_dir`]. The one Nebula Terminal left, when there is no other yet, is
+/// copied first: the history and the folder ranks follow the app to its new name.
+pub fn data_file(name: &str) -> PathBuf {
+    let folder = data_dir();
+    let file = folder.join(name);
+    if !file.exists() {
+        let former = folder
+            .with_file_name(if cfg!(windows) { "Nebula" } else { "nebula" })
+            .join(name);
+        if former.is_file() && std::fs::create_dir_all(&folder).is_ok() {
+            let _ = std::fs::copy(former, &file);
+        }
+    }
+    file
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[cfg(windows)]
+    fn translates_drive_paths() {
+        assert_eq!(translate_path("/c/Users"), "C:/Users");
+        assert_eq!(translate_path("/d"), "D:/");
+        assert_eq!(translate_path("/dev/null"), "NUL");
+        assert_eq!(translate_path("/usr"), "/usr");
+        assert_eq!(translate_path("-c"), "-c");
+    }
+
+    #[test]
+    #[cfg(not(windows))]
+    fn leaves_paths_alone_elsewhere() {
+        assert_eq!(translate_path("/c/Users"), "/c/Users");
+    }
+
+    #[test]
+    fn reads_settings_under_their_former_name_too() {
+        env::set_var("NEBULA_SETTING_TEST", "former");
+        assert_eq!(setting("SETTING_TEST").as_deref(), Some("former"));
+        env::set_var("SHELDUCK_SETTING_TEST", "current");
+        assert_eq!(setting("SETTING_TEST").as_deref(), Some("current"));
+        assert_eq!(setting("SETTING_TEST_UNSET"), None);
+    }
+
+    #[test]
+    fn shows_home_as_tilde() {
+        let home = home().expect("home");
+        assert_eq!(display_path(&home), "~");
+        assert_eq!(display_path(&home.join("projects")), "~/projects");
+    }
+}

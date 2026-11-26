@@ -1,7 +1,7 @@
 {
-  "name": "nebula-terminal",
+  "name": "shelduck",
   "private": true,
-  "version": "2.11.0",
+  "version": "3.0.0",
   "license": "PolyForm-Shield-1.0.0",
   "type": "module",
   "scripts": {

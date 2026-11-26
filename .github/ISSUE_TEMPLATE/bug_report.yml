@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in Nebula Terminal doesn't work as expected
+description: Something in Shelduck doesn't work as expected
 title: "[Bug] "
 labels: []
 body:
@@ -10,7 +10,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Nebula Terminal version
+      label: Shelduck version
       description: Settings → About
       placeholder: 1.0.0
     validations:

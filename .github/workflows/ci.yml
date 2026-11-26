@@ -47,7 +47,7 @@ jobs:
       - name: Test frontend
         run: npm test
 
-      - name: Stage the Nebula interpreter for Tauri
+      - name: Stage the Shelduck interpreter for Tauri
         run: node scripts/build-sidecar.mjs
 
       - name: Check Rust formatting
@@ -56,7 +56,7 @@ jobs:
       - name: Lint Rust
         run: cargo clippy --locked --workspace --all-targets -- -D warnings
 
-      - name: Test Rust (app backend and Nebula interpreter)
+      - name: Test Rust (app backend and Shelduck interpreter)
         run: cargo test --locked --workspace --all-targets
 
       - name: Build desktop executable
@@ -65,10 +65,10 @@ jobs:
       - name: Upload executables
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
-          name: Nebula-Terminal-windows-x64
+          name: Shelduck-windows-x64
           path: |
-            target/release/nebula-terminal.exe
-            target/release/nebula-sh.exe
+            target/release/shelduck.exe
+            target/release/shelduck-sh.exe
           if-no-files-found: error
           retention-days: 14
 
@@ -104,28 +104,92 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Stage the Nebula interpreter for Tauri
+      - name: Stage the Shelduck interpreter for Tauri
         run: node scripts/build-sidecar.mjs
 
       - name: Lint Rust
         run: cargo clippy --locked --workspace --all-targets -- -D warnings
 
-      - name: Test Rust (app backend and Nebula interpreter)
+      - name: Test Rust (app backend and Shelduck interpreter)
         run: cargo test --locked --workspace --all-targets
 
       - name: Build packages
         run: npm run tauri build
 
+      # Before 3.0 the app was Nebula Terminal: its package has to give way to this one,
+      # and the commands it had have to go on working.
+      - name: Update from the Nebula Terminal package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          installed() { dpkg-query -W -f='${Status}' "$1" 2> /dev/null | grep -q 'ok installed'; }
+          gh release download v2.11.0 --repo "$GITHUB_REPOSITORY" --dir former --pattern '*_amd64.deb'
+          sudo apt-get install -y ./former/*.deb
+          installed nebula-terminal
+          sudo apt-get install -y ./target/release/bundle/deb/*.deb
+          installed shelduck
+          if installed nebula-terminal; then echo 'The nebula-terminal package is still installed.'; exit 1; fi
+          test "$(shelduck-sh -c 'echo works')" = works
+          test "$(nebula-sh -c 'echo works')" = works
+          grep -q 'exec /usr/bin/shelduck ' /usr/bin/nebula-terminal && test -x /usr/bin/nebula-terminal
+          sudo apt-get install -y rpm
+          rpm=$(ls target/release/bundle/rpm/*.rpm)
+          rpm -qp --obsoletes "$rpm" | grep -q '^nebula-terminal'
+          rpm -qplv "$rpm" | grep -E '^-rwxr-xr-x.* /usr/bin/nebula-(sh|terminal)$' | wc -l | grep -qx 2
+
       - name: Upload packages
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
-          name: Nebula-Terminal-linux-x64
+          name: Shelduck-linux-x64
           path: |
             target/release/bundle/deb/*.deb
             target/release/bundle/rpm/*.rpm
             target/release/bundle/appimage/*.AppImage
           if-no-files-found: error
           retention-days: 14
+
+  # The installers, tried for real. Nebula Terminal 2.11.0 is installed and set up, then
+  # updated the way its own updater does it: Shelduck has to take its place with the
+  # same settings, and uninstall cleanly.
+  update:
+    name: CI / update from Nebula Terminal
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+        with:
+          toolchain: 1.98.1
+
+      - name: Cache Rust builds
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build the installers
+        run: npm run tauri build
+
+      - name: Download Nebula Terminal 2.11.0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download v2.11.0 --repo $env:GITHUB_REPOSITORY --dir former --pattern '*_x64-setup.exe' --pattern '*_x64_en-US.msi'
+
+      - name: Update an installation made with the setup program
+        run: node scripts/test-update.mjs nsis (Get-Item former/*-setup.exe).FullName (Get-Item target/release/bundle/nsis/*-setup.exe).FullName
+
+      - name: Update an installation made with the MSI
+        run: node scripts/test-update.mjs msi (Get-Item former/*.msi).FullName (Get-Item target/release/bundle/msi/*.msi).FullName
 
   # Windows on Arm: built on the x64 runner (MSVC has the ARM64 tools), as the release
   # workflow builds it. Only NSIS: WiX 3 can't make an ARM64 MSI.
@@ -163,7 +227,7 @@ jobs:
       - name: Upload the ARM64 installer
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
-          name: Nebula-Terminal-windows-arm64
+          name: Shelduck-windows-arm64
           path: target/aarch64-pc-windows-msvc/release/bundle/nsis/*.exe
           if-no-files-found: error
           retention-days: 14

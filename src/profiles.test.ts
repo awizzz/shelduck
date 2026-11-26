@@ -12,10 +12,14 @@ describe("pickProfile", () => {
     expect(pickProfile([...previewProfiles, custom], custom.id)?.id).toBe(custom.id);
   });
 
+  it("knows the built-in shell by its former id", () => {
+    expect(pickProfile([...previewProfiles].reverse(), "nebula")?.id).toBe("shelduck");
+  });
+
   it("falls back to the first installed shell", () => {
-    expect(pickProfile(previewProfiles, "gitbash")?.id).toBe("nebula");
-    expect(pickProfile(previewProfiles, "custom:removed")?.id).toBe("nebula");
-    expect(pickProfile(previewProfiles, "")?.id).toBe("nebula");
+    expect(pickProfile(previewProfiles, "gitbash")?.id).toBe("shelduck");
+    expect(pickProfile(previewProfiles, "custom:removed")?.id).toBe("shelduck");
+    expect(pickProfile(previewProfiles, "")?.id).toBe("shelduck");
     expect(pickProfile(previewProfiles.map((profile) => ({ ...profile, available: profile.id === "pwsh" })))?.id).toBe("pwsh");
   });
 
@@ -47,11 +51,11 @@ describe("profile groups", () => {
 
 describe("profileMenuSections", () => {
   it("keeps a short list flat", () => {
-    const short = [byId("nebula"), byId("pwsh"), byId("wsl"), byId("wsl:Debian")];
+    const short = [byId("shelduck"), byId("pwsh"), byId("wsl"), byId("wsl:Debian")];
     const sections = profileMenuSections(short);
     expect(sections).toHaveLength(1);
     expect(sections[0]!.heading).toBeUndefined();
-    expect(sections[0]!.profiles.map((profile) => profile.id)).toEqual(["nebula", "pwsh", "wsl", "wsl:Debian"]);
+    expect(sections[0]!.profiles.map((profile) => profile.id)).toEqual(["shelduck", "pwsh", "wsl", "wsl:Debian"]);
     expect(profileMenuSections([])).toEqual([]);
   });
 

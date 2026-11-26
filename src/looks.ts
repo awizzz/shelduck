@@ -1,4 +1,5 @@
 import { normalizeThemeId, resolveTheme, type TerminalTheme } from "./themes";
+import { currentProfileId } from "./profiles";
 import type { AppearancePreferences, ProfileLook } from "./types";
 
 /** The accent of admin windows, so they're never taken for ordinary ones. */
@@ -54,7 +55,7 @@ export function sanitizeLooks(value: unknown, customThemes: readonly TerminalThe
     if (themeId) look.themeId = themeId;
     if (typeof raw.fontFamily === "string" && raw.fontFamily.trim() && raw.fontFamily.length <= 240) look.fontFamily = raw.fontFamily.trim();
     if (typeof raw.fontSize === "number" && Number.isFinite(raw.fontSize)) look.fontSize = Math.min(32, Math.max(8, Math.round(raw.fontSize)));
-    return Object.keys(look).length ? [[id, look]] : [];
+    return Object.keys(look).length ? [[currentProfileId(id), look]] : [];
   });
   return Object.fromEntries(entries);
 }

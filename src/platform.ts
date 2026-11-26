@@ -3,9 +3,9 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 declare global {
   interface Window {
     /** "windows", "linux" or "macos", set by the desktop host (src-tauri/src/platform.rs). */
-    __NEBULA_PLATFORM__?: string;
+    __SHELDUCK_PLATFORM__?: string;
     /** This machine's name, to tell its folders from a server's in OSC 7 reports. */
-    __NEBULA_HOST__?: string;
+    __SHELDUCK_HOST__?: string;
   }
 }
 
@@ -14,14 +14,14 @@ export type Platform = "windows" | "linux" | "macos";
 function detect(): Platform {
   if (typeof window === "undefined") return "windows";
   // The browser preview shows the Windows app unless asked for another (?platform=linux).
-  const value = window.__NEBULA_PLATFORM__ ?? new URLSearchParams(window.location.search).get("platform");
+  const value = window.__SHELDUCK_PLATFORM__ ?? new URLSearchParams(window.location.search).get("platform");
   return value === "linux" || value === "macos" ? value : "windows";
 }
 
 export const platform: Platform = detect();
 export const isWindows = platform === "windows";
 
-export const hostName = typeof window !== "undefined" ? window.__NEBULA_HOST__ ?? "" : "";
+export const hostName = typeof window !== "undefined" ? window.__SHELDUCK_HOST__ ?? "" : "";
 
 /** What the system calls the app that shows folders. */
 export const fileManagerName = isWindows ? "File Explorer" : "the file manager";

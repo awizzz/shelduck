@@ -46,7 +46,7 @@ export function fillBlanks(command: string, values: Record<string, string>): str
   return command.replace(BLANK, (whole, name: string) => values[name] ?? whole);
 }
 
-const LAST_VALUES_KEY = "nebula-terminal.blanks.v1";
+const LAST_VALUES_KEY = "shelduck.blanks.v1";
 
 /** What was typed for each blank last time, per saved command. Kept on this PC only. */
 export function lastBlankValues(id: string): Record<string, string> {

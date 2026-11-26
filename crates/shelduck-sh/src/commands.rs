@@ -1,0 +1,245 @@
+//! Catalog of the commands Shelduck provides itself.
+
+use crate::coreutils;
+
+/// Run inside the shell process because they change or read its state.
+pub const BUILTINS: &[&str] = &[
+    "alias",
+    "cd",
+    "clear",
+    "dirs",
+    "exit",
+    "export",
+    "help",
+    "history",
+    "popd",
+    "pushd",
+    "source",
+    ".",
+    "type",
+    "unalias",
+    "unset",
+    "which",
+    "echo",
+    "test",
+    "[",
+    "true",
+    "false",
+    ":",
+    "local",
+    "declare",
+    "typeset",
+    "return",
+    "break",
+    "continue",
+    "shift",
+    "getopts",
+    "set",
+    "read",
+    "eval",
+    "command",
+    "let",
+    "jobs",
+    "wait",
+    "fg",
+    "bg",
+    "disown",
+    "trap",
+    "mapfile",
+    "readarray",
+    "z",
+];
+
+/// Builtins that run other commands; inside a pipeline they need a sub-shell.
+pub fn runs_code(name: &str) -> bool {
+    matches!(name, "eval" | "source" | "." | "command")
+}
+
+/// Commands implemented by Shelduck on top of coreutils.
+pub const EXTRAS: &[&str] = &[
+    "awk", "cmp", "diff", "find", "grep", "imgcat", "kill", "killall", "less", "ls", "open",
+    "pkill", "ps", "sed", "tree", "xargs", "xdg-open",
+];
+
+pub fn is_builtin(name: &str) -> bool {
+    BUILTINS.contains(&name)
+}
+
+/// Commands run by re-executing `shelduck-sh <name>`.
+pub fn is_util(name: &str) -> bool {
+    EXTRAS.contains(&name) || coreutils::NAMES.contains(&name)
+}
+
+pub fn all_names() -> impl Iterator<Item = &'static str> {
+    let mut names: Vec<&'static str> = BUILTINS
+        .iter()
+        .chain(EXTRAS)
+        .chain(coreutils::NAMES)
+        .copied()
+        .collect();
+    names.sort_unstable();
+    names.dedup();
+    names.into_iter()
+}
+
+pub fn describe(name: &str) -> Option<&'static str> {
+    Some(match name {
+        "alias" => "define or list aliases",
+        "cd" => "change directory",
+        "clear" => "clear the screen",
+        "dirs" | "pushd" | "popd" => "directory stack",
+        "exit" => "close this shell",
+        "export" => "set environment variables",
+        "help" => "list Shelduck commands, or show examples of one",
+        "history" => "show command history",
+        "source" | "." => "run commands from a file",
+        "type" | "which" => "show what a command is",
+        "unalias" => "remove an alias",
+        "unset" => "remove a variable or function",
+        "test" | "[" => "check files, strings and numbers",
+        "true" | ":" => "do nothing, successfully",
+        "false" => "do nothing, unsuccessfully",
+        "local" => "variable local to a function",
+        "declare" | "typeset" => "set variables, list functions",
+        "return" => "leave a function",
+        "break" => "leave a loop",
+        "continue" => "next loop iteration",
+        "shift" => "drop the first arguments",
+        "getopts" => "read a script's options",
+        "set" => "shell options and arguments",
+        "read" => "read a line into variables",
+        "eval" => "run text as a command",
+        "command" => "run a command, skipping functions",
+        "let" => "arithmetic",
+        "jobs" => "list background jobs",
+        "wait" => "wait for background jobs",
+        "fg" => "bring a job to the front, Ctrl+Z pauses it again",
+        "bg" => "let a paused job run in the background",
+        "disown" => "let a job run on, out of the list",
+        "trap" => "run commands on exit, error or Ctrl+C",
+        "mapfile" | "readarray" => "read lines into an array",
+        "z" => "jump to a folder you visit often",
+        "cat" => "print files",
+        "cp" => "copy files",
+        "mv" => "move or rename",
+        "rm" => "remove files",
+        "mkdir" => "create directories",
+        "rmdir" => "remove empty directories",
+        "touch" => "create files or update times",
+        "ls" => "list directory contents",
+        "tree" => "show a directory tree",
+        "imgcat" => "show an image in the terminal",
+        "find" => "search for files",
+        "grep" => "search text with patterns",
+        "head" => "first lines of a file",
+        "tail" => "last lines of a file",
+        "less" | "more" => "page through text",
+        "wc" => "count lines, words, bytes",
+        "sort" => "sort lines",
+        "uniq" => "remove repeated lines",
+        "cut" => "select columns",
+        "tr" => "translate characters",
+        "tee" => "copy input to files",
+        "echo" => "print text",
+        "printf" => "formatted print",
+        "pwd" => "print current directory",
+        "env" | "printenv" => "show environment",
+        "date" => "print the date",
+        "du" => "disk usage",
+        "df" => "free disk space",
+        "ln" => "create links",
+        "realpath" => "absolute path",
+        "basename" | "dirname" => "split paths",
+        "ps" => "list processes",
+        "kill" | "killall" | "pkill" => "stop processes",
+        "open" | "xdg-open" => "open with the default app",
+        "xargs" => "build commands from input",
+        "sleep" => "wait for a while",
+        "seq" => "print number sequences",
+        "whoami" => "current user",
+        "hostname" => "computer name",
+        "uname" => "system information",
+        "sha256sum" | "sha1sum" | "sha512sum" | "md5sum" | "cksum" => "checksums",
+        "base64" => "encode or decode base64",
+        "diff" => "compare files line by line",
+        "cmp" => "compare files byte by byte",
+        "sed" => "edit text with a script",
+        "awk" => "process text by columns",
+        _ => return None,
+    })
+}
+
+/// The winget package of a tool people expect to have, by the command they type.
+pub fn winget_package(name: &str) -> Option<&'static str> {
+    Some(match name.to_ascii_lowercase().as_str() {
+        "git" => "Git.Git",
+        "gh" => "GitHub.cli",
+        "lazygit" => "JesseDuffield.lazygit",
+        "python" | "python3" | "pip" | "pip3" => "Python.Python.3.14",
+        "uv" | "uvx" => "astral-sh.uv",
+        "node" | "npm" | "npx" => "OpenJS.NodeJS.LTS",
+        "deno" => "DenoLand.Deno",
+        "bun" => "Oven-sh.Bun",
+        "go" => "GoLang.Go",
+        "cargo" | "rustc" | "rustup" => "Rustlang.Rustup",
+        "java" | "javac" => "Microsoft.OpenJDK.21",
+        "dotnet" => "Microsoft.DotNet.SDK.10",
+        "pwsh" => "Microsoft.PowerShell",
+        "code" => "Microsoft.VisualStudioCode",
+        "vim" => "vim.vim",
+        "nvim" => "Neovim.Neovim",
+        "docker" => "Docker.DockerDesktop",
+        "kubectl" => "Kubernetes.kubectl",
+        "helm" => "Helm.Helm",
+        "terraform" => "Hashicorp.Terraform",
+        "az" => "Microsoft.AzureCLI",
+        "aws" => "Amazon.AWSCLI",
+        "make" => "ezwinports.make",
+        "cmake" => "Kitware.CMake",
+        "rg" => "BurntSushi.ripgrep.MSVC",
+        "fd" => "sharkdp.fd",
+        "bat" => "sharkdp.bat",
+        "fzf" => "junegunn.fzf",
+        "jq" => "jqlang.jq",
+        "zoxide" => "ajeetdsouza.zoxide",
+        "starship" => "Starship.Starship",
+        "ffmpeg" | "ffprobe" => "Gyan.FFmpeg",
+        "7z" => "7zip.7zip",
+        "wget" => "JernejSimoncic.Wget",
+        _ => return None,
+    })
+}
+
+/// Linux equivalents for Windows commands people type out of habit.
+pub fn windows_equivalent(name: &str) -> Option<&'static str> {
+    Some(match name.to_ascii_lowercase().as_str() {
+        "dir" => "ls",
+        "cls" => "clear",
+        "type" => "cat",
+        "del" | "erase" => "rm",
+        "copy" | "xcopy" | "robocopy" => "cp",
+        "move" | "ren" | "rename" => "mv",
+        "md" => "mkdir",
+        "rd" => "rmdir",
+        "findstr" => "grep",
+        "fc" | "comp" => "diff",
+        "where" => "which",
+        "tasklist" => "ps",
+        "taskkill" => "kill",
+        "start" => "open",
+        "set" => "export",
+        _ => return None,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::winget_package;
+
+    #[test]
+    fn names_the_package_of_common_tools() {
+        assert_eq!(winget_package("git"), Some("Git.Git"));
+        assert_eq!(winget_package("Python3"), Some("Python.Python.3.14"));
+        assert_eq!(winget_package("frobnicate"), None);
+    }
+}

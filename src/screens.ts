@@ -5,6 +5,7 @@ import type { TerminalTab } from "./types";
  * IndexedDB rather than localStorage: a thousand colored lines per pane don't fit there.
  * Keys are `<window label>:<pane id>`, so each window tidies its own.
  */
+/** Named before the app was renamed; a new name would start empty and lose the saved screens. */
 const DATABASE = "nebula-terminal.screens";
 const STORE = "screens";
 /** Screens of windows that never came back are dropped after this long. */

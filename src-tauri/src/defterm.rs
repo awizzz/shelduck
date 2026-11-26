@@ -1,4 +1,4 @@
-//! Nebula Terminal as the default terminal of Windows 11.
+//! Shelduck as the default terminal of Windows 11.
 //!
 //! When a console program starts on its own (cmd from the Start menu, a script
 //! double-clicked in Explorer), the console host looks at `HKCU\Console\%%Startup`.
@@ -6,9 +6,9 @@
 //! OpenConsole, which ships with Windows 11) and `DelegationTerminal` the window that
 //! shows it. OpenConsole creates that class over COM and calls
 //! `ITerminalHandoff3::EstablishPtyHandoff`, passing the program's console as pipes.
-//! Nebula registers itself as that class and opens a tab on the pipes.
+//! Shelduck registers itself as that class and opens a tab on the pipes.
 
-/// Nebula's handoff class. Never change it: Windows stores it in the registry.
+/// Shelduck's handoff class. Never change it: Windows stores it in the registry.
 #[cfg(windows)]
 const TERMINAL_CLSID: &str = "{01EDD6E6-6F42-4E94-910B-C8D5B1F3231C}";
 #[cfg(windows)]
@@ -53,11 +53,20 @@ mod registry {
             .is_ok_and(|value| value.eq_ignore_ascii_case(TERMINAL_CLSID))
     }
 
+    /// The app the class starts is gone: an update moved it, as the one that renamed
+    /// Nebula Terminal did.
+    pub fn points_nowhere() -> bool {
+        RegKey::predef(HKEY_CURRENT_USER)
+            .open_subkey(format!(r"{}\LocalServer32", class_key()))
+            .and_then(|key| key.get_value::<String, _>(""))
+            .is_ok_and(|server| !Path::new(server.trim_matches('"')).is_file())
+    }
+
     /// COM starts `exe -Embedding` when a console arrives and the app isn't running.
     pub fn make_default(exe: &Path) -> io::Result<()> {
         let root = RegKey::predef(HKEY_CURRENT_USER);
         let (class, _) = root.create_subkey(class_key())?;
-        class.set_value("", &"Nebula Terminal")?;
+        class.set_value("", &"Shelduck")?;
         let (server, _) = class.create_subkey("LocalServer32")?;
         server.set_value("", &format!("\"{}\"", exe.display()))?;
         let (startup, _) = root.create_subkey(STARTUP)?;
@@ -451,7 +460,7 @@ pub struct DefaultTerminal {
     enabled: bool,
 }
 
-/// Makes Nebula the default terminal, or gives the choice back to Windows. `None` only
+/// Makes Shelduck the default terminal, or gives the choice back to Windows. `None` only
 /// reads the current state.
 #[tauri::command]
 pub fn default_terminal(enabled: Option<bool>) -> Result<DefaultTerminal, String> {
@@ -466,6 +475,9 @@ pub fn default_terminal(enabled: Option<bool>) -> Result<DefaultTerminal, String
         let result = match enabled {
             Some(true) => std::env::current_exe().and_then(|exe| registry::make_default(&exe)),
             Some(false) => registry::release_default(),
+            None if registry::is_default() && registry::points_nowhere() => {
+                std::env::current_exe().and_then(|exe| registry::make_default(&exe))
+            }
             None => Ok(()),
         };
         result.map_err(|error| format!("Could not change the default terminal: {error}"))?;
@@ -484,7 +496,7 @@ pub fn default_terminal(enabled: Option<bool>) -> Result<DefaultTerminal, String
     }
 }
 
-/// Part of `nebula-terminal --uninstall`.
+/// Part of `shelduck --uninstall`.
 pub fn uninstall() {
     #[cfg(windows)]
     let _ = registry::release_default();

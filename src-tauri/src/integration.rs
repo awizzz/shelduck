@@ -1,6 +1,6 @@
 //! Shell integration for PowerShell, Git Bash, WSL, and bash and zsh on Linux. Each
 //! shell gets a small script that marks its prompts and commands (OSC 133) and reports
-//! its folder (OSC 7), as Nebula does on its own. The user's profile and startup files
+//! its folder (OSC 7), as Shelduck does on its own. The user's profile and startup files
 //! still run first.
 
 use base64::{engine::general_purpose::STANDARD, Engine};
@@ -9,14 +9,14 @@ use std::{
     path::{Path, PathBuf},
 };
 
-const BASH_SCRIPT: &str = include_str!("../shell-integration/nebula.bash");
-const POWERSHELL_SCRIPT: &str = include_str!("../shell-integration/nebula.ps1");
-const ZSH_SCRIPT: &str = include_str!("../shell-integration/nebula.zsh");
-const BASH_FILE: &str = "nebula.bash";
+const BASH_SCRIPT: &str = include_str!("../shell-integration/shelduck.bash");
+const POWERSHELL_SCRIPT: &str = include_str!("../shell-integration/shelduck.ps1");
+const ZSH_SCRIPT: &str = include_str!("../shell-integration/shelduck.zsh");
+const BASH_FILE: &str = "shelduck.bash";
 /// Zsh reads `.zshenv` from ZDOTDIR, so the script gets a folder of its own.
 const ZSH_FOLDER: &str = "zsh";
 
-/// Starts the distribution's login shell. Bash reads Nebula's script, which reads the
+/// Starts the distribution's login shell. Bash reads Shelduck's script, which reads the
 /// usual startup files itself; any other shell starts as it always does.
 const WSL_LAUNCHER: &str = r#"f=$(wslpath -u "$1" 2>/dev/null); s=${SHELL:-$(getent passwd "$(id -un)" | cut -d: -f7)}; s=${s:-/bin/sh}; case ${s##*/} in bash) if [ -r "$f" ]; then exec "$s" --init-file "$f" -i; fi; exec "$s" -l;; zsh|fish|ksh|mksh|dash|ash|sh|tcsh|csh) exec "$s" -l;; esac; exec "$s""#;
 
@@ -110,7 +110,7 @@ fn powershell_args(args: &mut Vec<String>) {
 }
 
 /// ZDOTDIR points zsh at the script's folder; the script puts the user's own back
-/// from NEBULA_ZDOTDIR (empty when they had none, so zsh uses their home).
+/// from SHELDUCK_ZDOTDIR (empty when they had none, so zsh uses their home).
 fn zsh_environment(script: &Path, user_zdotdir: Option<String>) -> Vec<(String, String)> {
     let Some(folder) = script.parent() else {
         return Vec::new();
@@ -118,7 +118,7 @@ fn zsh_environment(script: &Path, user_zdotdir: Option<String>) -> Vec<(String, 
     vec![
         ("ZDOTDIR".to_owned(), folder.to_string_lossy().into_owned()),
         (
-            "NEBULA_ZDOTDIR".to_owned(),
+            "SHELDUCK_ZDOTDIR".to_owned(),
             user_zdotdir.unwrap_or_default(),
         ),
     ]
@@ -141,7 +141,7 @@ fn wsl_args(args: &mut Vec<String>, script: &Path) {
         "sh".to_owned(),
         "-c".to_owned(),
         WSL_LAUNCHER.to_owned(),
-        "nebula".to_owned(),
+        "shelduck".to_owned(),
         script.to_string_lossy().into_owned(),
     ]);
 }
@@ -151,8 +151,10 @@ mod tests {
     use super::*;
 
     fn scratch(name: &str) -> PathBuf {
-        let directory =
-            std::env::temp_dir().join(format!("nebula-integration-{name}-{}", std::process::id()));
+        let directory = std::env::temp_dir().join(format!(
+            "shelduck-integration-{name}-{}",
+            std::process::id()
+        ));
         let _ = fs::remove_dir_all(&directory);
         directory
     }
@@ -167,7 +169,7 @@ mod tests {
         assert_eq!(Kind::of("fish"), None);
         assert_eq!(Kind::of("wsl"), Some(Kind::Wsl));
         assert_eq!(Kind::of("wsl:Ubuntu"), Some(Kind::Wsl));
-        assert_eq!(Kind::of("nebula"), None);
+        assert_eq!(Kind::of("shelduck"), None);
         assert_eq!(Kind::of("cmd"), None);
         assert_eq!(Kind::of("ssh:server"), None);
     }
@@ -192,13 +194,13 @@ mod tests {
         let mut args = vec!["--login".to_owned(), "-i".to_owned()];
         bash_args(
             &mut args,
-            Path::new(r"C:\Users\me\AppData\Local\nebula\nebula.bash"),
+            Path::new(r"C:\Users\me\AppData\Local\shelduck\shelduck.bash"),
         );
         assert_eq!(
             args,
             [
                 "--init-file",
-                "C:/Users/me/AppData/Local/nebula/nebula.bash",
+                "C:/Users/me/AppData/Local/shelduck/shelduck.bash",
                 "-i"
             ]
         );
@@ -212,9 +214,9 @@ mod tests {
             "--cd".to_owned(),
             "~".to_owned(),
         ];
-        wsl_args(&mut args, Path::new(r"C:\nebula\nebula.bash"));
+        wsl_args(&mut args, Path::new(r"C:\shelduck\shelduck.bash"));
         assert_eq!(args[..6], ["-d", "Debian", "--cd", "~", "-e", "sh"]);
-        assert_eq!(args.last().unwrap(), r"C:\nebula\nebula.bash");
+        assert_eq!(args.last().unwrap(), r"C:\shelduck\shelduck.bash");
     }
 
     #[test]
@@ -253,7 +255,7 @@ mod tests {
             [
                 ("ZDOTDIR".to_owned(), zdotdir.to_string_lossy().into_owned()),
                 (
-                    "NEBULA_ZDOTDIR".to_owned(),
+                    "SHELDUCK_ZDOTDIR".to_owned(),
                     std::env::var("ZDOTDIR").unwrap_or_default()
                 ),
             ]

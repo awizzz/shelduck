@@ -1,14 +1,14 @@
-# Nebula Terminal
+# Shelduck
 
-[![CI](https://github.com/awizzz/nebula-terminal/actions/workflows/ci.yml/badge.svg)](https://github.com/awizzz/nebula-terminal/actions/workflows/ci.yml)
-[![Security audit](https://github.com/awizzz/nebula-terminal/actions/workflows/security.yml/badge.svg)](https://github.com/awizzz/nebula-terminal/actions/workflows/security.yml)
+[![CI](https://github.com/awizzz/shelduck/actions/workflows/ci.yml/badge.svg)](https://github.com/awizzz/shelduck/actions/workflows/ci.yml)
+[![Security audit](https://github.com/awizzz/shelduck/actions/workflows/security.yml/badge.svg)](https://github.com/awizzz/shelduck/actions/workflows/security.yml)
 [![License: PolyForm Shield](https://img.shields.io/badge/license-PolyForm%20Shield-blue.svg)](LICENSE)
 
-A terminal for Windows and Linux, with Linux commands built in. Tabs, split panes, a command palette and a settings screen you can actually click through. It opens **Nebula**, its own command interpreter, by default, and runs PowerShell, Command Prompt, Git Bash and WSL on Windows, bash, zsh and fish on Linux.
+A terminal for Windows and Linux, with Linux commands built in. Tabs, split panes, a command palette and a settings screen you can actually click through. It opens its own shell by default, and runs PowerShell, Command Prompt, Git Bash and WSL on Windows, bash, zsh and fish on Linux.
 
-Website and download: [nebula.awizz.space](https://nebula.awizz.space)
+Website and download: [shelduck.awizz.space](https://shelduck.awizz.space)
 
-![Nebula Terminal running the Nebula interpreter](docs/images/terminal.png)
+![Shelduck running its own shell](docs/images/terminal.png)
 
 | | |
 | --- | --- |
@@ -21,88 +21,88 @@ Website and download: [nebula.awizz.space](https://nebula.awizz.space)
 
 ### Windows
 
-Download the latest installer from [Releases](https://github.com/awizzz/nebula-terminal/releases/latest):
+Download the latest installer from [Releases](https://github.com/awizzz/shelduck/releases/latest):
 
-- `Nebula.Terminal_<version>_x64-setup.exe`: per-user installer (recommended)
-- `Nebula.Terminal_<version>_x64_en-US.msi`: MSI for managed machines
-- `Nebula-Terminal-<version>-windows-x64-portable.zip`: no installation, just unzip and run
-- `Nebula.Terminal_<version>_arm64-setup.exe` and `Nebula-Terminal-<version>-windows-arm64-portable.zip`: the same for Windows on Arm (Snapdragon laptops, Surface Pro X)
+- `Shelduck_<version>_x64-setup.exe`: per-user installer (recommended)
+- `Shelduck_<version>_x64_en-US.msi`: MSI for managed machines
+- `Shelduck-<version>-windows-x64-portable.zip`: no installation, just unzip and run
+- `Shelduck_<version>_arm64-setup.exe` and `Shelduck-<version>-windows-arm64-portable.zip`: the same for Windows on Arm (Snapdragon laptops, Surface Pro X)
 
 Releases are not code-signed yet, so Windows SmartScreen may warn you the first time. Check the file against `SHA256SUMS.txt` from the same release before you continue:
 
 ```powershell
-Get-FileHash '.\Nebula.Terminal_1.2.0_x64-setup.exe' -Algorithm SHA256
+Get-FileHash '.\Shelduck_3.0.0_x64-setup.exe' -Algorithm SHA256
 ```
 
-With [Scoop](https://scoop.sh), which installs the portable version and adds the `nebula-terminal` command. `scoop update nebula-terminal` follows new releases:
+With [Scoop](https://scoop.sh), which installs the portable version and adds the `shelduck` command. `scoop update shelduck` follows new releases:
 
 ```powershell
-scoop install https://github.com/awizzz/nebula-terminal/releases/latest/download/nebula-terminal.json
+scoop install https://github.com/awizzz/shelduck/releases/latest/download/shelduck.json
 ```
 
 Requires Windows 10 1809 or later (ConPTY) and the WebView2 runtime, which ships with Windows 11 and current Windows 10 builds.
 
 ### Linux
 
-From the same [Releases](https://github.com/awizzz/nebula-terminal/releases/latest) page:
+From the same [Releases](https://github.com/awizzz/shelduck/releases/latest) page:
 
-- `Nebula.Terminal_<version>_amd64.deb`: Debian, Ubuntu, Linux Mint, Pop!_OS
-- `Nebula.Terminal-<version>-1.x86_64.rpm`: Fedora, openSUSE, RHEL and the like
-- `Nebula.Terminal_<version>_amd64.AppImage`: any distribution, nothing to install, and it updates itself
+- `Shelduck_<version>_amd64.deb`: Debian, Ubuntu, Linux Mint, Pop!_OS
+- `Shelduck-<version>-1.x86_64.rpm`: Fedora, openSUSE, RHEL and the like
+- `Shelduck_<version>_amd64.AppImage`: any distribution, nothing to install, and it updates itself
 - `arm64` and `aarch64` versions of the three for 64-bit Arm machines
 
 ```sh
-sudo apt install ./Nebula.Terminal_2.11.0_amd64.deb
-sudo dnf install ./Nebula.Terminal-2.11.0-1.x86_64.rpm
-chmod +x Nebula.Terminal_2.11.0_amd64.AppImage && ./Nebula.Terminal_2.11.0_amd64.AppImage
+sudo apt install ./Shelduck_3.0.0_amd64.deb
+sudo dnf install ./Shelduck-3.0.0-1.x86_64.rpm
+chmod +x Shelduck_3.0.0_amd64.AppImage && ./Shelduck_3.0.0_amd64.AppImage
 ```
 
 `sha256sum -c SHA256SUMS.txt --ignore-missing` checks what you downloaded. You need a distribution from 2022 or later (glibc 2.35 and WebKitGTK 4.1): Ubuntu 22.04, Debian 12, Fedora 36 or newer. AppImages need FUSE 2, which Ubuntu 24.04 leaves out: `sudo apt install libfuse2t64`.
 
-Your login shell opens by default. Bash and zsh get shell integration (command blocks, notifications, new tabs in the same folder), `Ctrl+Z` suspends a program in Nebula as in bash, and the deb and rpm packages add the `nebula-terminal` command. What Linux doesn't have yet: the quick terminal, and what belongs to Windows (default terminal, Explorer menu, administrator windows, Mica).
+Your login shell opens by default. Bash and zsh get shell integration (command blocks, notifications, new tabs in the same folder), `Ctrl+Z` suspends a program in the Shelduck shell as in bash, and the deb and rpm packages add the `shelduck` command. What Linux doesn't have yet: the quick terminal, and what belongs to Windows (default terminal, Explorer menu, administrator windows, Mica).
 
-## Nebula, the built-in interpreter
+## The Shelduck shell
 
-If you know Linux, you already know Nebula. `ls`, `cd`, `cat`, `cp`, `mv`, `rm`, `grep`, `find`, `sed`, `awk`, `diff`, `head`, `tail`, `sort`, `wc`, `tree`, `ps`, `kill` and about 70 more commands work on Windows with the options you're used to. Windows programs like `git`, `node`, `python` or `code` run as usual.
+If you know Linux, you already know this shell. `ls`, `cd`, `cat`, `cp`, `mv`, `rm`, `grep`, `find`, `sed`, `awk`, `diff`, `head`, `tail`, `sort`, `wc`, `tree`, `ps`, `kill` and about 70 more commands work on Windows with the options you're used to. Windows programs like `git`, `node`, `python` or `code` run as usual.
 
 ```text
 ~/projects/app on  main !1 ?1
 ❯ grep -rn TODO src | head -5
 ```
 
-- **The real GNU behaviour.** The core commands come from [uutils coreutils](https://github.com/uutils/coreutils), a faithful MIT-licensed rewrite of GNU coreutils, and `sed`, `diff` and `cmp` from the uutils [sed](https://github.com/uutils/sed) and [diffutils](https://github.com/uutils/diffutils). `grep`, `find`, `tree`, `ps`, `kill`, `xargs` and `open` are written for Nebula.
+- **The real GNU behaviour.** The core commands come from [uutils coreutils](https://github.com/uutils/coreutils), a faithful MIT-licensed rewrite of GNU coreutils, and `sed`, `diff` and `cmp` from the uutils [sed](https://github.com/uutils/sed) and [diffutils](https://github.com/uutils/diffutils). `grep`, `find`, `tree`, `ps`, `kill`, `xargs` and `open` are written for Shelduck.
 - **A real `awk`.** The POSIX language (patterns, fields, arrays, functions, `printf`, `getline`, pipes to and from commands) and the gawk functions people reach for: `gensub`, `strftime`, `asort`, `match` with groups. It was checked line by line against GNU awk.
 - **Shell syntax you expect.** Pipes, `&&`, `||`, `;`, redirections (`>`, `>>`, `2>&1`, `&>`, here-documents), `$VAR`, `export`, `$(…)`, `~`, `*.txt`, `**/*.rs` for every subfolder, `{a,b}` and `{1..10}`, aliases, `!!` and `!$`. `/c/Users` and `/dev/null` work too.
-- **Real scripts.** `if`, `for`, `while`, `case`, functions with `local` variables, arrays and associative arrays, `$((…))`, `[[ … ]]`, `read`, `mapfile`, `${name%.txt}` and the other `${…}` forms, `getopts`, `set -e`, `trap`. Run a script with `nebula-sh deploy.sh` or `./deploy.sh`.
-- **Jobs, as in bash.** `cmd &` runs while you keep typing; `jobs`, `wait`, `fg` and `kill %1` handle them. `Ctrl+Z` pauses the command in front (in Nebula Terminal), then `fg` or `bg` resumes it, and `kill -STOP` and `kill -CONT` work too. A job can't take the keyboard, and Ctrl+C only stops what runs in front.
-- **Nicer than a plain prompt, and yours to shape.** It shows the folder, Git branch and changes, how long slow commands took, and failed exit codes; `~/.nebularc` can add the time, background jobs, an admin marker or the Node, Python and Rust versions of your project, reorder and recolor it all, or hand it to Starship. Commands are colored as you type (green if they exist, red if not), suggestions from your history appear in grey (→ to accept).
-- **Tab completion that knows things.** Commands and paths, the options of every Nebula command (`ls --<Tab>`), Git subcommands and branches, the scripts of your `package.json` (`npm run`, `pnpm`, `yarn`, `bun`), the commands of `cargo`, `winget`, `docker`, `kubectl`, `gh`, `az`, `terraform`, `helm`, `dotnet`, `go`, `pip`, `uv` and more, Makefile targets, `$VARIABLES` and your SSH hosts. Add your own in `~/.nebula-completions`.
+- **Real scripts.** `if`, `for`, `while`, `case`, functions with `local` variables, arrays and associative arrays, `$((…))`, `[[ … ]]`, `read`, `mapfile`, `${name%.txt}` and the other `${…}` forms, `getopts`, `set -e`, `trap`. Run a script with `shelduck-sh deploy.sh` or `./deploy.sh`.
+- **Jobs, as in bash.** `cmd &` runs while you keep typing; `jobs`, `wait`, `fg` and `kill %1` handle them. `Ctrl+Z` pauses the command in front (in the Shelduck shell), then `fg` or `bg` resumes it, and `kill -STOP` and `kill -CONT` work too. A job can't take the keyboard, and Ctrl+C only stops what runs in front.
+- **Nicer than a plain prompt, and yours to shape.** It shows the folder, Git branch and changes, how long slow commands took, and failed exit codes; `~/.shelduckrc` can add the time, background jobs, an admin marker or the Node, Python and Rust versions of your project, reorder and recolor it all, or hand it to Starship. Commands are colored as you type (green if they exist, red if not), suggestions from your history appear in grey (→ to accept).
+- **Tab completion that knows things.** Commands and paths, the options of every built-in command (`ls --<Tab>`), Git subcommands and branches, the scripts of your `package.json` (`npm run`, `pnpm`, `yarn`, `bun`), the commands of `cargo`, `winget`, `docker`, `kubectl`, `gh`, `az`, `terraform`, `helm`, `dotnet`, `go`, `pip`, `uv` and more, Makefile targets, `$VARIABLES` and your SSH hosts. Add your own in `~/.shelduck-completions`.
 - **Examples when you need them.** `help grep` shows a few commands for what people do with grep, the way tldr does, for 40 commands.
 - **Finds what you did before.** `Ctrl+R` searches your history as you type, fuzzily: `gpo` finds `git push origin`. `z proj` jumps to the folder you visit most that matches, learned from your `cd`s.
 - **`ls` and `tree` with icons and colors** on screen. When the output goes to a file or another command, it stays plain.
 - **Helpful errors.** Typing `gti` suggests `git`, and `dir`, `cls` or `findstr` point to `ls`, `clear` and `grep`.
 
-Your history is saved in `%APPDATA%\Nebula\history.txt`, and the folders `z` knows in `dirs.txt` next to it. Aliases and variables can go in `~/.nebularc`, which runs at startup:
+Your history is saved in `%APPDATA%\Shelduck\history.txt`, and the folders `z` knows in `dirs.txt` next to it. Aliases and variables can go in `~/.shelduckrc`, which runs at startup:
 
 ```sh
 alias gs='git status'
 export EDITOR=code
 
 # The prompt: segments in order, their colors, the symbol, and one line instead of two.
-NEBULA_PROMPT="folder git node python rust jobs duration status time"
-NEBULA_PROMPT_COLORS="folder=bold+cyan time=dim git=#c678dd"
-NEBULA_PROMPT_SYMBOL="❯"
-NEBULA_PROMPT_LINES=2
+SHELDUCK_PROMPT="folder git node python rust jobs duration status time"
+SHELDUCK_PROMPT_COLORS="folder=bold+cyan time=dim git=#c678dd"
+SHELDUCK_PROMPT_SYMBOL="❯"
+SHELDUCK_PROMPT_LINES=2
 ```
 
-Prompt segments: `folder`, `git`, `duration`, `status`, `time`, `user`, `host`, `admin`, `jobs`, `node`, `python` and `rust`. Colors take a name (`red`, `bright-blue`, `gray`…), `#rrggbb` or a number from 0 to 255, plus `bold`, `dim`, `italic` or `underline`, joined by `+`. `NEBULA_PROMPT=starship` uses [Starship](https://starship.rs) when it's installed.
+Prompt segments: `folder`, `git`, `duration`, `status`, `time`, `user`, `host`, `admin`, `jobs`, `node`, `python` and `rust`. Colors take a name (`red`, `bright-blue`, `gray`…), `#rrggbb` or a number from 0 to 255, plus `bold`, `dim`, `italic` or `underline`, joined by `+`. `SHELDUCK_PROMPT=starship` uses [Starship](https://starship.rs) when it's installed.
 
-`nebula-sh.exe` also works on its own in Windows Terminal or any other terminal. Set `NEBULA_ICONS=1` there if your font includes Nerd Font icons.
+`shelduck-sh.exe` also works on its own in Windows Terminal or any other terminal. Set `SHELDUCK_ICONS=1` there if your font includes Nerd Font icons.
 
 A short script, to give an idea:
 
 ```sh
-#!/usr/bin/env nebula
+#!/usr/bin/env shelduck
 set -e
 for file in *.log; do
   size=$(wc -c < "$file")
@@ -112,7 +112,7 @@ for file in *.log; do
 done
 ```
 
-Your own completions go in `~/.nebula-completions`, one per line: the command, the words before the one to complete, that word, and what it means after a colon.
+Your own completions go in `~/.shelduck-completions`, one per line: the command, the words before the one to complete, that word, and what it means after a colon.
 
 ```text
 deploy staging: the staging servers
@@ -122,24 +122,24 @@ deploy production eu
 
 ## What you get
 
-- **Your shells, detected automatically.** Nebula, PowerShell 7, Windows PowerShell, Command Prompt, Git Bash and WSL, plus one entry for each WSL distribution and for each host in your `~/.ssh/config`. Nebula is the default, and you can pick another in Settings.
+- **Your shells, detected automatically.** The Shelduck shell, PowerShell 7, Windows PowerShell, Command Prompt, Git Bash and WSL, plus one entry for each WSL distribution and for each host in your `~/.ssh/config`. The Shelduck shell is the default, and you can pick another in Settings.
 - **Your own profiles and SSH connections.** Settings → Profiles runs any program in a tab, with its own arguments, starting folder and color, and you see how the arguments will be split before you save. Add SSH connection does the same for a server: user, port, key file and port forwards, with the ssh command shown as you type. A connection that drops reconnects on its own, and any profile can set its own environment variables. For a server you reach once, type `user@server` in the palette.
 - **A look per profile.** Give any profile its own theme, font and size. Its tabs wear them, and the whole window takes its colors while one is in front. Admin windows are red, so an elevated shell never passes for an ordinary one.
 - **Any shell as administrator.** The shield next to a shell in the new-tab menu opens it in an admin window, after the usual Windows confirmation. Every tab there is elevated and the title bar says so, while your other tabs stay as they are. Open as administrator on a tab does the same in its folder, File Explorer has an entry for it too, and Settings → Keyboard can give it a shortcut.
 - **Workspaces.** Save the open tabs under a name, with their splits and folders, and open them again in one click from the new-tab menu or the palette, or every time the app starts. Each pane can start a command too, like `npm run dev`.
 - **Tabs, split panes and windows.** Drag tabs to reorder them, middle-click to close, and right-click for more. They can sit across the top or in a list down the side. Double-click a tab to rename it, give it a color, or pin it so it stays on the left and can't be closed by accident. Split any pane right or down, up to eight panes per tab, and drag the dividers or press `Alt+Shift+Arrow` to resize them; the palette swaps panes and evens them out. Panes can show their title and folder, and a pane that shows a log can be made read-only. A pane can move to a tab of its own, a tab dragged onto a pane splits it, and a tab dragged out of the window gets its own, or joins another window: the shells keep running.
-- **Images and progress.** Sixel and iTerm2 images show in the terminal (`imgcat photo.png` in Nebula), programs that report progress (winget, for one) fill a bar on their tab and on the taskbar button, and vim or tmux over SSH can copy to your clipboard, never read it.
+- **Images and progress.** Sixel and iTerm2 images show in the terminal (`imgcat photo.png` in the Shelduck shell), programs that report progress (winget, for one) fill a bar on their tab and on the taskbar button, and vim or tmux over SSH can copy to your clipboard, never read it.
 - **Command palette** (`Ctrl+Shift+P`). Every action, shell and theme in one searchable list, and `Ctrl+Shift+Space` jumps to any tab by a few letters of its name or folder. The commands you save in Settings run from there too, or from a shortcut of their own, with blanks like `{{host}}` filled in as they start.
 - **A quick terminal on a shortcut.** `` Win+` `` drops a terminal down from the top of the screen over any app, and puts it away again. It keeps its own tabs, and its height and shortcut are yours to pick.
 - **Eleven themes, and 850 more in a gallery**: Nord, Rosé Pine, Catppuccin, Solarized, Kanagawa, GitHub and the rest, searchable and sorted into dark and light. Click one and the terminal wears it at once. You can also import schemes from Windows Terminal or iTerm2, and **edit any theme**: change its 16 colors, background, text and accent with a live preview, get warned when a color is hard to read, and export the result for Windows Terminal. The window chrome follows the terminal colors, so a light theme gives you a light app, and Follow Windows switches between a dark and a light theme with Windows' app mode. You can also pick an accent color, a Mica, solid or image background, and adjust transparency.
 - **Settings without a config file, and on every PC.** Fonts, cursor, padding, scrollback, profiles, starting folder and shortcuts, all found from one search box, and every change applies immediately. Point Sync settings at a file in OneDrive, Dropbox or a Git repository, and your other PCs get the same themes, shortcuts and saved commands, with no account, or save a backup file and restore it when you need it.
 - **For everyone.** Screen reader support for Narrator, NVDA and JAWS, two high contrast themes that keep every color at 7:1, and terminals that follow Windows' contrast themes on their own.
 - **Safe paste.** Pasting several lines shows exactly what will run before it reaches the shell, and a single pasted line never runs on its own.
-- **Shell integration, built in.** PowerShell, Git Bash and WSL (bash) mark their commands and report their folder without any setup, so notifications, command jumps and new tabs in the current folder work there as they do in Nebula. Your own profile and startup files still run.
+- **Shell integration, built in.** PowerShell, Git Bash and WSL (bash) mark their commands and report their folder without any setup, so notifications, command jumps and new tabs in the current folder work there as they do in the Shelduck shell. Your own profile and startup files still run.
 - **Knows when you're done.** When a long command finishes in a tab you're not looking at, you get a Windows notification and a green or red dot on the tab.
 - **Updates itself.** When a new version is out, the app offers to install it and restarts. You can also check from Settings → About.
-- **Opens from Explorer and from any shell.** Right-click a folder and choose Open in Nebula Terminal, or type `nebula-terminal .` in cmd, PowerShell, Git Bash or WSL. Both open a tab in the window you already have. Open in Nebula Terminal (Administrator) opens an admin window there instead.
-- **Your default terminal, if you want.** On Windows 11, Settings → Behavior makes Nebula Terminal the default terminal: `cmd`, scripts and other console programs started from the Start menu or Explorer open in a tab. If you'd rather stay in Windows Terminal, the same page adds Nebula to its profiles.
+- **Opens from Explorer and from any shell.** Right-click a folder and choose Open in Shelduck, or type `shelduck .` in cmd, PowerShell, Git Bash or WSL. Both open a tab in the window you already have. Open in Shelduck (Administrator) opens an admin window there instead.
+- **Your default terminal, if you want.** On Windows 11, Settings → Behavior makes Shelduck the default terminal: `cmd`, scripts and other console programs started from the Start menu or Explorer open in a tab. If you'd rather stay in Windows Terminal, the same page adds Shelduck to its profiles.
 - **Click a path to open it.** `Ctrl+Click` on `src/main.rs:42` in a compiler error or a `grep` result opens the file at that line, in VS Code, Cursor, the app Windows uses or a command you choose. Folders open in File Explorer.
 - **Windows habits.** `Ctrl+C` copies when text is selected and interrupts otherwise, `Ctrl+V` pastes, and dropping files inserts their quoted paths. Copy with colors, in the right-click menu, pastes into Word or a chat with the terminal's colors, and `Ctrl+Shift+M` selects with the keyboard alone.
 - **Type in every pane at once.** `Ctrl+Shift+B` sends what you type to all the panes of a tab, and Type in every tab, in the palette, to every tab of the window, to run the same command on several servers or shells. A colored outline shows when it's on.
@@ -170,7 +170,7 @@ deploy production eu
 | Find in every tab | `Ctrl+Shift+Alt+F` |
 | Switch to a tab | `Ctrl+Shift+Space` |
 | Mark mode (select with the keyboard) | `Ctrl+Shift+M` |
-| Pause the command in front (Nebula) | `Ctrl+Z` |
+| Pause the command in front (Shelduck shell) | `Ctrl+Z` |
 | Reopen the tab closed last | `Ctrl+Shift+Alt+T` |
 | Command palette | `Ctrl+Shift+P` |
 | Settings | `Ctrl+,` |
@@ -196,10 +196,10 @@ sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev
 Then:
 
 ```sh
-git clone https://github.com/awizzz/nebula-terminal.git
-cd nebula-terminal
+git clone https://github.com/awizzz/shelduck.git
+cd shelduck
 npm ci
-npm run tauri dev      # builds the Nebula interpreter, then runs the app with hot reload
+npm run tauri dev      # builds the shell, then runs the app with hot reload
 npm run tauri build    # build the installers into src-tauri/target/release/bundle
 ```
 
@@ -209,6 +209,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the checks CI runs and [docs/architec
 
 ## License
 
-[PolyForm Shield 1.0.0](LICENSE). Use Nebula Terminal for anything, including at work, read the code and send pull requests; just don't use the code to build a product that competes with it. Versions up to 1.1.0 were released under the MIT License and stay under it.
+[PolyForm Shield 1.0.0](LICENSE). Use Shelduck for anything, including at work, read the code and send pull requests; just don't use the code to build a product that competes with it. Versions up to 1.1.0 were released under the MIT License and stay under it.
 
-Nebula ships [uutils coreutils](https://github.com/uutils/coreutils) and [sed](https://github.com/uutils/sed) (MIT), [uutils diffutils](https://github.com/uutils/diffutils) (MIT or Apache 2.0) icons from [Nerd Fonts](https://www.nerdfonts.com) (MIT, see `src/assets/fonts/LICENSE-nerd-fonts.txt`), the typefaces [Alegreya Sans](https://github.com/huertatipografica/Alegreya-Sans) and [IBM Plex Mono](https://github.com/IBM/plex) (SIL Open Font License 1.1, see `public/fonts/`), and the color schemes of the theme gallery from [iTerm2-Color-Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes) (MIT, see `src/assets/LICENSE-color-schemes.txt`; each scheme belongs to its author).
+Shelduck ships [uutils coreutils](https://github.com/uutils/coreutils) and [sed](https://github.com/uutils/sed) (MIT), [uutils diffutils](https://github.com/uutils/diffutils) (MIT or Apache 2.0) icons from [Nerd Fonts](https://www.nerdfonts.com) (MIT, see `src/assets/fonts/LICENSE-nerd-fonts.txt`), the typefaces [Alegreya Sans](https://github.com/huertatipografica/Alegreya-Sans) and [IBM Plex Mono](https://github.com/IBM/plex) (SIL Open Font License 1.1, see `public/fonts/`), and the color schemes of the theme gallery from [iTerm2-Color-Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes) (MIT, see `src/assets/LICENSE-color-schemes.txt`; each scheme belongs to its author).

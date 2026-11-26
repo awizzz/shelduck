@@ -4,7 +4,7 @@ import { previewProfiles } from "./profiles";
 import { loadSession, saveSession } from "./session";
 import type { TerminalProfile, TerminalTab } from "./types";
 
-const [nebula, pwsh] = previewProfiles as [typeof previewProfiles[0], typeof previewProfiles[0]];
+const [shelduck, pwsh] = previewProfiles as [typeof previewProfiles[0], typeof previewProfiles[0]];
 const custom: TerminalProfile = { id: "custom:0b9d4e63-58a2-4f1b-a7c4-2e5d9f8a6b10", name: "Python", kind: "custom", available: true, accent: "#3fb27f" };
 const debian = previewProfiles.find((profile) => profile.id === "wsl:Debian")!;
 
@@ -33,7 +33,7 @@ describe("session", () => {
       title: "~/src",
       customTitle: "Build",
       color: "teal",
-      panes: [{ id: "one", profile: nebula }, { id: "two", profile: pwsh }, { id: "three", profile: nebula }],
+      panes: [{ id: "one", profile: shelduck }, { id: "two", profile: pwsh }, { id: "three", profile: shelduck }],
       layout,
       activePaneId: "three",
     };
@@ -42,7 +42,7 @@ describe("session", () => {
     expect(restored).toMatchObject({ title: "~/src", customTitle: "Build", color: "teal" });
     expect(restored.layout).toMatchObject({ type: "split", direction: "vertical", children: [{ type: "pane" }, { type: "split", direction: "horizontal" }] });
     const order = paneIds(restored.layout);
-    expect(order.map((id) => restored.panes.find((pane) => pane.id === id)?.profile.id)).toEqual(["nebula", "pwsh", "nebula"]);
+    expect(order.map((id) => restored.panes.find((pane) => pane.id === id)?.profile.id)).toEqual(["shelduck", "pwsh", "shelduck"]);
     expect(restored.activePaneId).toBe(order[2]);
   });
 
@@ -50,9 +50,9 @@ describe("session", () => {
     const layout = splitPane(splitPane(paneLeaf("one"), "one", "two", "vertical"), "two", "three", "vertical");
     saveSession([{
       id: "tab",
-      title: "Nebula",
+      title: "Shelduck",
       panes: [
-        { id: "one", profile: nebula, cwd: "C:\\Users\\me\\src" },
+        { id: "one", profile: shelduck, cwd: "C:\\Users\\me\\src" },
         { id: "two", profile: debian, cwd: "\\\\wsl.localhost\\Debian\\home\\me" },
         { id: "three", profile: pwsh, cwd: "\\\\server\\share" },
       ],
@@ -65,51 +65,51 @@ describe("session", () => {
   });
 
   it("remembers where each pane's screen is kept, when asked to", () => {
-    saveSession([tab(nebula, pwsh)], "tab", (paneId) => `main:${paneId}`);
+    saveSession([tab(shelduck, pwsh)], "tab", (paneId) => `main:${paneId}`);
     const restored = loadSession(previewProfiles)!.tabs[0]!;
     expect(paneIds(restored.layout).map((id) => restored.panes.find((pane) => pane.id === id)?.restoreScreen)).toEqual(["main:p0", "main:p1"]);
-    saveSession([tab(nebula)], "tab");
+    saveSession([tab(shelduck)], "tab");
     expect(loadSession(previewProfiles)!.tabs[0]!.panes[0]!.restoreScreen).toBeUndefined();
   });
 
   it("keeps pinned tabs pinned, and on the left", () => {
-    const loose = tab(nebula);
+    const loose = tab(shelduck);
     const pinned = { ...tab(pwsh), pinned: true };
     saveSession([loose, pinned], loose.id);
     const restored = loadSession(previewProfiles)!.tabs;
-    expect(restored.map((saved) => [saved.panes[0]!.profile.id, saved.pinned])).toEqual([["pwsh", true], ["nebula", undefined]]);
+    expect(restored.map((saved) => [saved.panes[0]!.profile.id, saved.pinned])).toEqual([["pwsh", true], ["shelduck", undefined]]);
   });
 
   it("migrates a version 2 snapshot", () => {
-    localStorage.setItem("nebula-terminal.session.v2", JSON.stringify({
+    localStorage.setItem("shelduck.session.v2", JSON.stringify({
       version: 2,
       activeTabIndex: 0,
       tabs: [{ title: "PowerShell", splitDirection: "horizontal", activePaneIndex: 1, panes: [{ profileId: "pwsh" }, { profileId: "gone" }], paneSizes: [3, 1] }],
     }));
     const tab = loadSession(previewProfiles)!.tabs[0]!;
     expect(tab.layout).toMatchObject({ type: "split", direction: "horizontal", sizes: [0.75, 0.25] });
-    expect(tab.panes.map((pane) => pane.profile.id)).toEqual(["pwsh", "nebula"]);
+    expect(tab.panes.map((pane) => pane.profile.id)).toEqual(["pwsh", "shelduck"]);
     expect(tab.activePaneId).toBe(tab.panes[1]!.id);
     expect(tab.customTitle).toBeUndefined();
   });
 
   it("falls back to one pane for a broken layout and drops unknown values", () => {
-    localStorage.setItem("nebula-terminal.session.v3", JSON.stringify({
+    localStorage.setItem("shelduck.session.v3", JSON.stringify({
       version: 3,
       activeTabIndex: 9,
       tabs: [{ title: "x".repeat(500), customTitle: "  ", color: "chartreuse", activePaneIndex: -2, layout: { type: "split", direction: "vertical", children: "nope" } }, null],
     }));
     const { tabs, activeTabId } = loadSession(previewProfiles)!;
     expect(tabs).toHaveLength(1);
-    expect(tabs[0]).toMatchObject({ title: "Nebula", customTitle: undefined, color: undefined, layout: { type: "pane" } });
+    expect(tabs[0]).toMatchObject({ title: "Shelduck", customTitle: undefined, color: undefined, layout: { type: "pane" } });
     expect(tabs[0]!.panes).toHaveLength(1);
     expect(activeTabId).toBe(tabs[0]!.id);
   });
 
   it("ignores snapshots it doesn't understand", () => {
-    localStorage.setItem("nebula-terminal.session.v3", JSON.stringify({ version: 4, tabs: [], activeTabIndex: 0 }));
+    localStorage.setItem("shelduck.session.v3", JSON.stringify({ version: 4, tabs: [], activeTabIndex: 0 }));
     expect(loadSession(previewProfiles)).toBeNull();
-    localStorage.setItem("nebula-terminal.session.v3", "{");
+    localStorage.setItem("shelduck.session.v3", "{");
     expect(loadSession(previewProfiles)).toBeNull();
   });
 });
@@ -127,13 +127,13 @@ describe("profiles in a saved session", () => {
     const second = tab(debian);
     saveSession([first, second], second.id);
     const restored = loadSession(previewProfiles)!;
-    expect(restored.tabs.map((restoredTab) => restoredTab.panes[0]!.profile.id)).toEqual(["nebula", "wsl:Debian"]);
+    expect(restored.tabs.map((restoredTab) => restoredTab.panes[0]!.profile.id)).toEqual(["shelduck", "wsl:Debian"]);
     expect(restored.activeTabId).toBe(restored.tabs[1]!.id);
   });
 
   it("does the same for a custom profile whose program is missing", () => {
     const first = tab(custom);
     saveSession([first], first.id);
-    expect(loadSession([...previewProfiles, { ...custom, available: false }])!.tabs[0]!.panes[0]!.profile.id).toBe("nebula");
+    expect(loadSession([...previewProfiles, { ...custom, available: false }])!.tabs[0]!.panes[0]!.profile.id).toBe("shelduck");
   });
 });

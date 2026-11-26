@@ -12,13 +12,13 @@ export interface AdministratorLaunch {
 declare global {
   interface Window {
     /** Set before the page loads, in admin windows only. */
-    __NEBULA_ADMIN__?: AdministratorLaunch;
+    __SHELDUCK_ADMIN__?: AdministratorLaunch;
   }
 }
 
 /** The request this admin window was opened for; undefined in an ordinary window. */
 export function administratorLaunch(): AdministratorLaunch | undefined {
-  return typeof window === "undefined" ? undefined : window.__NEBULA_ADMIN__;
+  return typeof window === "undefined" ? undefined : window.__SHELDUCK_ADMIN__;
 }
 
 /** Every shell in this window runs as administrator. */

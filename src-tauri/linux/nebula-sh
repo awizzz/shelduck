@@ -1,0 +1,3 @@
+#!/bin/sh
+# Shelduck's shell was nebula-sh before 3.0. Scripts and terminals that name it still run.
+exec /usr/bin/shelduck-sh "$@"

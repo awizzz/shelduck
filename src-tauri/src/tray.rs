@@ -7,7 +7,7 @@ use tauri::{
     AppHandle,
 };
 
-const ID: &str = "nebula";
+const ID: &str = "shelduck";
 
 pub fn show(app: &AppHandle) -> tauri::Result<()> {
     if app.tray_by_id(ID).is_some() {
@@ -19,11 +19,11 @@ pub fn show(app: &AppHandle) -> tauri::Result<()> {
             &MenuItem::with_id(app, "new-window", "New window", true, None::<&str>)?,
             &MenuItem::with_id(app, "quick", "Quick terminal", true, None::<&str>)?,
             &PredefinedMenuItem::separator(app)?,
-            &MenuItem::with_id(app, "quit", "Quit Nebula Terminal", true, None::<&str>)?,
+            &MenuItem::with_id(app, "quit", "Quit Shelduck", true, None::<&str>)?,
         ],
     )?;
     let mut builder = TrayIconBuilder::with_id(ID)
-        .tooltip("Nebula Terminal")
+        .tooltip("Shelduck")
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id().as_ref() {

@@ -47,13 +47,13 @@ pub fn open_window(app: &AppHandle, transfer: Option<&str>) -> tauri::Result<Web
     config.center = false;
     let transfer = serde_json::to_string(&transfer).unwrap_or_else(|_| "null".to_owned());
     let mut script =
-        format!("window.__NEBULA_WINDOW__ = 'tabs'; window.__NEBULA_TRANSFER__ = {transfer};");
+        format!("window.__SHELDUCK_WINDOW__ = 'tabs'; window.__SHELDUCK_TRANSFER__ = {transfer};");
     let mut builder = WebviewWindowBuilder::from_config(app, &config)?
         .initialization_script(crate::platform::page_script());
     // An admin copy's windows are all admin windows, with the same web data.
     if crate::elevation::is_admin_copy() {
-        script.push_str(" window.__NEBULA_ADMIN__ = {};");
-        builder = builder.title("Administrator: Nebula Terminal");
+        script.push_str(" window.__SHELDUCK_ADMIN__ = {};");
+        builder = builder.title("Administrator: Shelduck");
         if let Some(dir) = crate::elevation::admin_data_dir(app) {
             builder = builder.data_directory(dir);
         }

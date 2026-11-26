@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["src-tauri", "crates/nebula-sh"]
+members = ["src-tauri", "crates/shelduck-sh"]
 
 [profile.release]
 codegen-units = 1

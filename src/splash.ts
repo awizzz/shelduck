@@ -13,7 +13,7 @@ const LIT: Record<SplashStep, number> = { interface: 4, shells: 6, session: 9, r
 const FULL = 11;
 /** Never keep the app behind the loading screen longer than this. */
 const LONGEST = 8000;
-const BOOT_KEY = "nebula-terminal.boot.v1";
+const BOOT_KEY = "shelduck.boot.v1";
 
 let lit = 2;
 let leaving = false;

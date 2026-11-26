@@ -768,7 +768,7 @@ mod tests {
 
     fn scratch(name: &str) -> PathBuf {
         let directory =
-            env::temp_dir().join(format!("nebula-custom-{name}-{}", std::process::id()));
+            env::temp_dir().join(format!("shelduck-custom-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&directory);
         fs::create_dir_all(&directory).unwrap();
         directory

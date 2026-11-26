@@ -110,7 +110,7 @@ const MAX_MARKED_COMMANDS = 500;
 
 /** Falls back to the bundled Nerd Font icons for glyphs the user's font lacks. */
 function withSymbols(fontFamily: string): string {
-  return `${fontFamily}, "Nebula Symbols"`;
+  return `${fontFamily}, "Shelduck Symbols"`;
 }
 
 /** Ctrl+<letter> on any keyboard layout: Cyrillic or Greek layouts report another `key`. */
@@ -121,15 +121,15 @@ function isControlLetter(event: KeyboardEvent, letter: "c" | "v" | "z"): boolean
   return !/^[a-z]$/.test(key) && event.code === `Key${letter.toUpperCase()}`;
 }
 
-/** Nebula's prompt as the real interpreter draws it (see crates/nebula-sh/src/prompt.rs). */
-const NEBULA_PROMPT = "\x1b[1;34m~/projects/app\x1b[0m \x1b[2mon\x1b[0m \x1b[1;35m\ue725 main\x1b[0m \x1b[33m!1\x1b[0m \x1b[2m?1\x1b[0m\r\n\x1b[1;32m❯\x1b[0m ";
+/** Shelduck's prompt as the real interpreter draws it (see crates/shelduck-sh/src/prompt.rs). */
+const SHELDUCK_PROMPT = "\x1b[1;34m~/projects/app\x1b[0m \x1b[2mon\x1b[0m \x1b[1;35m\ue725 main\x1b[0m \x1b[33m!1\x1b[0m \x1b[2m?1\x1b[0m\r\n\x1b[1;31m❯\x1b[0m ";
 const POWERSHELL_PROMPT = "\x1b[34mPS\x1b[0m C:\\Users\\you> ";
 
 function previewPrompt(profile: TerminalProfile): string {
-  return profile.kind === "nebula" ? NEBULA_PROMPT : POWERSHELL_PROMPT;
+  return profile.kind === "shelduck" ? SHELDUCK_PROMPT : POWERSHELL_PROMPT;
 }
 
-/** Colors a command line the way Nebula's highlighter does. */
+/** Colors a command line the way Shelduck's highlighter does. */
 function highlightCommand(line: string): string {
   return line.split(" ").map((word, index) => {
     if (index === 0) return `\x1b[1;32m${word}\x1b[0m`;
@@ -139,7 +139,7 @@ function highlightCommand(line: string): string {
 }
 
 /**
- * Browser-only stand-in for a shell: replays real Nebula output recorded by
+ * Browser-only stand-in for a shell: replays real Shelduck output recorded by
  * scripts/record-preview.py. `#screenshot` drops the notice for documentation images.
  */
 /** OSC 52: programs may put text on the clipboard, never read what's there. */
@@ -158,10 +158,10 @@ function writePreview(terminal: Terminal, profile: TerminalProfile) {
     terminal.writeln(`\x1b[2m${profile.name} · browser preview. Shells only run inside the desktop app.\x1b[0m`);
     terminal.writeln("");
   }
-  if (profile.kind === "nebula") {
+  if (profile.kind === "shelduck") {
     // Marked like the real shell, so command jumps work in the preview too.
     for (const { command, output } of previewSession) {
-      terminal.write(`\x1b]133;A\x07${NEBULA_PROMPT}${highlightCommand(command)}\r\n\x1b]133;C\x07`);
+      terminal.write(`\x1b]133;A\x07${SHELDUCK_PROMPT}${highlightCommand(command)}\r\n\x1b]133;C\x07`);
       terminal.write(output.replace(/\n/g, "\r\n"));
       terminal.write("\x1b]133;D;0\x07\r\n");
     }
@@ -778,10 +778,10 @@ export default function TerminalPane({
         paste();
         return false;
       }
-      // Ctrl+Z while Nebula runs a command pauses it, as in bash. The program has the
+      // Ctrl+Z while Shelduck runs a command pauses it, as in bash. The program has the
       // keyboard then, so the shell hears it through the host instead of the key.
       const sessionId = sessionRef.current;
-      if (isControlLetter(event, "z") && !event.shiftKey && running && sessionId && isTauri() && profile.id === "nebula" && !readOnlyRef.current) {
+      if (isControlLetter(event, "z") && !event.shiftKey && running && sessionId && isTauri() && profile.id === "shelduck" && !readOnlyRef.current) {
         event.preventDefault();
         void invoke<boolean>("suspend_foreground", { sessionId })
           .then((paused) => { if (!paused) writeRef.current("\x1a"); })
@@ -816,7 +816,7 @@ export default function TerminalPane({
       const text = paths.map((path) => quoteDroppedPath(path, profile)).join(" ");
       if (text) writeRaw(text);
     };
-    window.addEventListener("nebula:insert-paths", insertDropped);
+    window.addEventListener("shelduck:insert-paths", insertDropped);
 
     const highlights = startHighlights(terminal, () => preferencesRef.current.highlights, (highlight, line) => callbacksRef.current.onHighlight?.(highlight, line));
 
@@ -947,7 +947,7 @@ export default function TerminalPane({
       host.removeEventListener("contextmenu", handleContextMenu);
       host.removeEventListener("click", selectOutputAt);
       host.removeEventListener("mousedown", noteSelection, true);
-      window.removeEventListener("nebula:insert-paths", insertDropped);
+      window.removeEventListener("shelduck:insert-paths", insertDropped);
       section?.removeEventListener("mousemove", pointAt);
       section?.removeEventListener("mouseleave", leaveBlock);
       blockScroll.dispose();

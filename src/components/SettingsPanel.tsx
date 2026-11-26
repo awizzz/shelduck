@@ -26,7 +26,7 @@ import { fileManagerName, isWindows } from "../platform";
 
 /** How profile fields name environment variables on this system. */
 const VARIABLES = isWindows ? "%VARIABLES%" : "$VARIABLES";
-/** The shells that get shell integration, besides Nebula. */
+/** The shells that get shell integration, besides Shelduck. */
 const INTEGRATED_SHELLS = isWindows ? "PowerShell, Git Bash and WSL" : "Bash and zsh";
 const COMPUTER = isWindows ? "PC" : "computer";
 
@@ -45,7 +45,7 @@ interface SettingsPanelProps {
   onProfilesChanged: () => Promise<void>;
   /** What Windows offers to open the app in a folder; null outside the desktop app. */
   launchers: Launchers | null;
-  /** Whether Nebula is the default terminal; null outside the desktop app. */
+  /** Whether Shelduck is the default terminal; null outside the desktop app. */
   defaultTerminal: DefaultTerminal | null;
   onDefaultTerminalChange: (enabled: boolean) => void;
   /** An admin window: its settings come from the window that opened it. */
@@ -72,7 +72,7 @@ const pages: Array<{ id: SettingsPage; label: string; icon: typeof Palette }> = 
 const monospaceFonts = isWindows
   ? ["IBM Plex Mono", "Cascadia Mono", "Cascadia Code", "Consolas", "JetBrains Mono", "Fira Code", "Source Code Pro", "Iosevka", "Hack", "Lucida Console"]
   : ["IBM Plex Mono", "DejaVu Sans Mono", "Ubuntu Mono", "Noto Sans Mono", "Liberation Mono", "JetBrains Mono", "Fira Code", "Source Code Pro", "Iosevka", "Hack", "Cascadia Code"];
-const REPOSITORY = "https://github.com/awizzz/nebula-terminal";
+const REPOSITORY = "https://github.com/awizzz/shelduck";
 
 /**
  * Re-encodes a background image so it fits comfortably in local storage next to the
@@ -938,7 +938,7 @@ export default function SettingsPanel({ open, initialPage, profiles, preferences
                   </Row>
                 </Group>
                 <Group title="Commands">
-                  <Row label="Command blocks" description={`Point at a finished command to see it as one block and copy it, copy its output or run it again. Works with shell integration: Nebula, ${INTEGRATED_SHELLS}.`}>
+                  <Row label="Command blocks" description={`Point at a finished command to see it as one block and copy it, copy its output or run it again. Works with shell integration: Shelduck, ${INTEGRATED_SHELLS}.`}>
                     <Switch label="Command blocks" checked={preferences.commandBlocks} onChange={(value) => patch("commandBlocks", value)} />
                   </Row>
                 </Group>
@@ -1028,7 +1028,7 @@ export default function SettingsPanel({ open, initialPage, profiles, preferences
                   <Row label="Open new tabs and splits in the current folder" description="Uses the folder the focused shell is in.">
                     <Switch label="Open new tabs and splits in the current folder" checked={preferences.openInCurrentFolder} onChange={(value) => patch("openInCurrentFolder", value)} />
                   </Row>
-                  <Row label="Shell integration" description={`${INTEGRATED_SHELLS} mark their commands and report their folder, as Nebula does. Your profile still runs first. Applies to new tabs.`}>
+                  <Row label="Shell integration" description={`${INTEGRATED_SHELLS} mark their commands and report their folder, as Shelduck does. Your profile still runs first. Applies to new tabs.`}>
                     <Switch label="Shell integration" checked={preferences.shellIntegration} onChange={(value) => patch("shellIntegration", value)} />
                   </Row>
                 </Group>
@@ -1100,7 +1100,7 @@ export default function SettingsPanel({ open, initialPage, profiles, preferences
                   )}
                 </Group>
                 <Group title="Notifications">
-                  <Row label="Notify when a long command finishes" description={`When its tab is in the background or the window is not in front. Works in Nebula, in ${INTEGRATED_SHELLS} with shell integration, and with programs that send notifications.`}>
+                  <Row label="Notify when a long command finishes" description={`When its tab is in the background or the window is not in front. Works in Shelduck, in ${INTEGRATED_SHELLS} with shell integration, and with programs that send notifications.`}>
                     <Switch label="Notify when a long command finishes" checked={preferences.notifyLongCommands} onChange={(value) => patch("notifyLongCommands", value)} />
                   </Row>
                   <Row label="Long means at least">
@@ -1111,7 +1111,7 @@ export default function SettingsPanel({ open, initialPage, profiles, preferences
                 </Group>
                 {isWindows && <>
                 <Group title="Quick terminal" description={administrator ? "Change this from an ordinary window." : undefined}>
-                  <Row label="Quick terminal" description="A shortcut drops a terminal down from the top of the screen, over whatever you're doing, and the same shortcut puts it away. It has tabs of its own and works while Nebula Terminal is open.">
+                  <Row label="Quick terminal" description="A shortcut drops a terminal down from the top of the screen, over whatever you're doing, and the same shortcut puts it away. It has tabs of its own and works while Shelduck is open.">
                     <Switch label="Quick terminal" checked={preferences.quickTerminal} disabled={administrator} onChange={(value) => patch("quickTerminal", value)} />
                   </Row>
                   <Row label="Shortcut" description={quickTerminalProblem ?? "Works whatever app is in front."} error={quickTerminalProblem !== null && preferences.quickTerminal}>
@@ -1137,24 +1137,24 @@ export default function SettingsPanel({ open, initialPage, profiles, preferences
                     label="Default terminal"
                     description={defaultTerminal?.supported === false
                       ? "Needs Windows 11 version 22H2 or later."
-                      : "Console programs you start from the Start menu, Explorer or Run open in a Nebula tab instead of a window of their own. Windows Terminal's console does the work behind it."}
+                      : "Console programs you start from the Start menu, Explorer or Run open in a Shelduck tab instead of a window of their own. Windows Terminal's console does the work behind it."}
                   >
                     <Switch label="Default terminal" checked={defaultTerminal?.enabled ?? false} disabled={!defaultTerminal?.supported} onChange={onDefaultTerminalChange} />
                   </Row>
-                  <Row label="Open in Nebula Terminal" description="In the right-click menu of folders in File Explorer, with a second entry that opens an administrator window. On Windows 11, they're under Show more options.">
-                    <Switch label="Open in Nebula Terminal" checked={launchers?.explorerMenu ?? false} disabled={!launchers} onChange={(value) => patch("explorerMenu", value)} />
+                  <Row label="Open in Shelduck" description="In the right-click menu of folders in File Explorer, with a second entry that opens an administrator window. On Windows 11, they're under Show more options.">
+                    <Switch label="Open in Shelduck" checked={launchers?.explorerMenu ?? false} disabled={!launchers} onChange={(value) => patch("explorerMenu", value)} />
                   </Row>
-                  <Row label="Nebula in Windows Terminal" description="Adds Nebula to Windows Terminal's profiles, for when you work there. Windows Terminal picks it up the next time it starts.">
-                    <Switch label="Nebula in Windows Terminal" checked={launchers?.windowsTerminal ?? false} disabled={!launchers} onChange={(value) => patch("windowsTerminalProfile", value)} />
+                  <Row label="Shelduck in Windows Terminal" description="Adds Shelduck to Windows Terminal's profiles, for when you work there. Windows Terminal picks it up the next time it starts.">
+                    <Switch label="Shelduck in Windows Terminal" checked={launchers?.windowsTerminal ?? false} disabled={!launchers} onChange={(value) => patch("windowsTerminalProfile", value)} />
                   </Row>
-                  <Row label="nebula-terminal command" description="Type “nebula-terminal .” in a shell to open a tab in its folder. Shells that are already open don't see the change.">
-                    <Switch label="nebula-terminal command" checked={launchers?.command ?? false} disabled={!launchers} onChange={(value) => patch("pathCommand", value)} />
+                  <Row label="shelduck command" description="Type “shelduck .” in a shell to open a tab in its folder. Shells that are already open don't see the change.">
+                    <Switch label="shelduck command" checked={launchers?.command ?? false} disabled={!launchers} onChange={(value) => patch("pathCommand", value)} />
                   </Row>
                 </Group>
                 </>}
                 <Group title="Workspaces" description={workspaces.length ? "Opened from the new-tab menu or the command palette, next to the tabs already open." : "Save the tabs you have open (splits and folders included) from the new-tab menu or the command palette, and open them again in one click."}>
                   {workspaces.length > 0 && (
-                    <Row label="At startup, open" description="What the main window opens when Nebula Terminal starts.">
+                    <Row label="At startup, open" description="What the main window opens when Shelduck starts.">
                       <select className="field field--select" value={workspaces.some((workspace) => workspace.id === preferences.startupWorkspace) ? preferences.startupWorkspace : ""} onChange={(event) => patch("startupWorkspace", event.target.value)}>
                         <option value="">The tabs from last time</option>
                         {workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}</option>)}
@@ -1294,7 +1294,7 @@ export default function SettingsPanel({ open, initialPage, profiles, preferences
                 <div className="about">
                   <img src={appIcon} alt="" width={64} height={64} />
                   <div>
-                    <h2>Nebula Terminal</h2>
+                    <h2>Shelduck</h2>
                     <p>Version {version}</p>
                   </div>
                 </div>
@@ -1313,7 +1313,7 @@ export default function SettingsPanel({ open, initialPage, profiles, preferences
                 </Group>
                 <Group title="Backup">
                   <Row label="Back up settings" description="Every setting, saved command and workspace in one file, to bring back here or on another PC. Custom profiles stay in Profiles.">
-                    <button className="button" type="button" onClick={() => download(`nebula-terminal-settings-${new Date().toISOString().slice(0, 10)}.json`, backupDocument(preferences, workspaces))}>Save to a file…</button>
+                    <button className="button" type="button" onClick={() => download(`shelduck-settings-${new Date().toISOString().slice(0, 10)}.json`, backupDocument(preferences, workspaces))}>Save to a file…</button>
                   </Row>
                   <Row label="Restore settings" description={pendingBackup ? `Replace your settings and workspaces with the ones saved ${pendingBackup.savedAt ? new Date(pendingBackup.savedAt).toLocaleString() : "in this file"}?` : "From a backup file. Your sync file, if you have one, stays as it is."}>
                     {pendingBackup

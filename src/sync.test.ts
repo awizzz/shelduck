@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { defaultPreferences } from "./preferences";
 import { applySynced, digestOf, readSyncDocument, syncDocument, syncedPart } from "./sync";
 
-const here = { ...defaultPreferences, explorerMenu: true, startingFolder: "custom" as const, workingDirectory: "D:\\Work", fileOpener: "custom" as const, fileOpenerCommand: "notepad {file}", syncFile: "C:\\Users\\me\\OneDrive\\nebula.json" };
+const here = { ...defaultPreferences, explorerMenu: true, startingFolder: "custom" as const, workingDirectory: "D:\\Work", fileOpener: "custom" as const, fileOpenerCommand: "notepad {file}", syncFile: "C:\\Users\\me\\OneDrive\\shelduck.json" };
 
 describe("settings sync", () => {
   it("leaves out what belongs to one PC", () => {
@@ -27,10 +27,14 @@ describe("settings sync", () => {
     expect(digestOf(applySynced(applied, syncedPart(applied)))).toBe(digestOf(applied));
   });
 
-  it("refuses files that aren't Nebula Terminal settings", () => {
+  it("still reads a file written by Nebula Terminal", () => {
+    expect(readSyncDocument(JSON.stringify({ app: "Nebula Terminal", version: 1, savedAt: 3, preferences: { fontSize: 16 } }))).toEqual({ savedAt: 3, preferences: { fontSize: 16 } });
+  });
+
+  it("refuses files that aren't Shelduck settings", () => {
     expect(readSyncDocument("not json")).toBeNull();
     expect(readSyncDocument(JSON.stringify({ app: "Other", version: 1, savedAt: 1, preferences: {} }))).toBeNull();
-    expect(readSyncDocument(JSON.stringify({ app: "Nebula Terminal", version: 2, savedAt: 1, preferences: {} }))).toBeNull();
-    expect(readSyncDocument(JSON.stringify({ app: "Nebula Terminal", version: 1, savedAt: 1, preferences: [] }))).toBeNull();
+    expect(readSyncDocument(JSON.stringify({ app: "Shelduck", version: 2, savedAt: 1, preferences: {} }))).toBeNull();
+    expect(readSyncDocument(JSON.stringify({ app: "Shelduck", version: 1, savedAt: 1, preferences: [] }))).toBeNull();
   });
 });

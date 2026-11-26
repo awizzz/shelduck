@@ -28,7 +28,7 @@ export default function UpdateBanner({ update, onDismiss }: UpdateBannerProps) {
       <div className="update__header">
         <div className="update__icon" aria-hidden="true"><Download size={16} /></div>
         <div>
-          <p className="update__title">Nebula Terminal {update.version} is available</p>
+          <p className="update__title">Shelduck {update.version} is available</p>
           <p className="update__text">
             {error ?? (installing
               ? "Downloading and checking the update. The app restarts when it's installed."

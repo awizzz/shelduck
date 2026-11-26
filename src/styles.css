@@ -82,10 +82,10 @@
   --tab-h: 28px;
 }
 
-/* Nerd Font icons used by the Nebula interpreter (ls, tree, prompt). Subset by scripts/subset-icons.py. */
+/* Nerd Font icons used by the Shelduck interpreter (ls, tree, prompt). Subset by scripts/subset-icons.py. */
 @font-face {
-  font-family: "Nebula Symbols";
-  src: url("./assets/fonts/nebula-symbols.woff2") format("woff2");
+  font-family: "Shelduck Symbols";
+  src: url("./assets/fonts/shelduck-symbols.woff2") format("woff2");
   font-display: block;
 }
 

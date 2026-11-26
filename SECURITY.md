@@ -8,11 +8,11 @@ Fixes go into the latest release.
 
 Please don't post exploit details, credentials or tokens in a public issue. Use GitHub's private vulnerability reporting for this repository (Security → Report a vulnerability). If that isn't available, open a short issue asking for a private contact without any details.
 
-Include the Nebula Terminal version, the Windows version, how to reproduce the problem and what an attacker could do with it.
+Include the Shelduck version, the Windows version, how to reproduce the problem and what an attacker could do with it.
 
-## What Nebula Terminal stores
+## What Shelduck stores
 
-Settings and the tab layout live in the WebView2 profile of the app on your machine. Custom profiles are saved in `custom-profiles.json` in the app's config folder. Nothing is sent anywhere, except the update check: once a day (if enabled), the app asks GitHub's public API for the latest release of this repository. Command history belongs to each shell: Nebula keeps it in `%APPDATA%\Nebula\history.txt`, PowerShell in PSReadLine's file, bash in `.bash_history`. Nebula also runs `~/.nebularc` at startup, so treat that file like any other script.
+Settings and the tab layout live in the WebView2 profile of the app on your machine. Custom profiles are saved in `custom-profiles.json` in the app's config folder. Nothing is sent anywhere, except the update check: once a day (if enabled), the app asks GitHub's public API for the latest release of this repository. Command history belongs to each shell: Shelduck keeps it in `%APPDATA%\Shelduck\history.txt`, PowerShell in PSReadLine's file, bash in `.bash_history`. Shelduck also runs `~/.shelduckrc` at startup, so treat that file like any other script.
 
 ## Design choices that matter for security
 

@@ -1,3 +1,4 @@
+import { currentProfileId } from "./profiles";
 import { restoreSnapshot, snapshotOf } from "./session";
 import type { PersistedLayout, SessionSnapshot, TerminalProfile, TerminalTab } from "./types";
 
@@ -9,7 +10,7 @@ export interface Workspace {
   snapshot: SessionSnapshot;
 }
 
-const STORAGE_KEY = "nebula-terminal.workspaces.v1";
+const STORAGE_KEY = "shelduck.workspaces.v1";
 export const MAX_WORKSPACES = 30;
 const MAX_NAME = 60;
 
@@ -115,7 +116,7 @@ export function workspacePanes(workspace: Workspace): WorkspacePane[] {
     tab: tabIndex,
     pane: paneIndex,
     tabTitle: tab.customTitle || tab.title,
-    profileId: leaf.profileId,
+    profileId: currentProfileId(leaf.profileId),
     cwd: leaf.cwd,
     command: typeof leaf.command === "string" ? leaf.command : "",
   })));

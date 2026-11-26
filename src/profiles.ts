@@ -2,7 +2,7 @@ import { isWindows } from "./platform";
 import type { TerminalProfile, TerminalTab } from "./types";
 
 const windowsPreview: TerminalProfile[] = [
-  { id: "nebula", name: "Nebula", kind: "nebula", available: true, executable: "nebula-sh.exe", commandLine: "C:\\Program Files\\Nebula Terminal\\nebula-sh.exe", accent: "#9a4a22" },
+  { id: "shelduck", name: "Shelduck", kind: "shelduck", available: true, executable: "shelduck-sh.exe", commandLine: "C:\\Program Files\\Shelduck\\shelduck-sh.exe", accent: "#9a4a22" },
   { id: "pwsh", name: "PowerShell", kind: "pwsh", available: true, executable: "pwsh.exe", commandLine: "\"C:\\Program Files\\PowerShell\\7\\pwsh.exe\" -NoLogo", accent: "#5b8def" },
   { id: "powershell", name: "Windows PowerShell", kind: "powershell", available: true, executable: "powershell.exe", commandLine: "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoLogo", accent: "#3f7cc4" },
   { id: "cmd", name: "Command Prompt", kind: "cmd", available: true, executable: "cmd.exe", commandLine: "C:\\Windows\\System32\\cmd.exe", accent: "#9aa3ab" },
@@ -16,7 +16,7 @@ const windowsPreview: TerminalProfile[] = [
 
 const linuxPreview: TerminalProfile[] = [
   { id: "bash", name: "Bash", kind: "bash", available: true, executable: "bash", commandLine: "/usr/bin/bash", accent: "#4eaa25" },
-  { id: "nebula", name: "Nebula", kind: "nebula", available: true, executable: "nebula-sh", commandLine: "/usr/bin/nebula-sh", accent: "#9a4a22" },
+  { id: "shelduck", name: "Shelduck", kind: "shelduck", available: true, executable: "shelduck-sh", commandLine: "/usr/bin/shelduck-sh", accent: "#9a4a22" },
   { id: "zsh", name: "Zsh", kind: "zsh", available: true, executable: "zsh", commandLine: "/usr/bin/zsh", accent: "#c678dd" },
   { id: "fish", name: "Fish", kind: "fish", available: false, accent: "#4fb0c6" },
   { id: "pwsh", name: "PowerShell", kind: "pwsh", available: false, accent: "#5b8def" },
@@ -87,12 +87,18 @@ export function profileCommandLabel(profile: TerminalProfile): string {
   return profileGroup(profile) === "ssh" ? `Connect to ${profile.name}` : `New ${profile.name} tab`;
 }
 
+/** The built-in shell was `nebula` before 3.0, and saved settings, sessions and shortcuts may still say so. */
+export function currentProfileId(id: string): string {
+  return id === "nebula" ? "shelduck" : id;
+}
+
 /**
  * Picks the profile to open: the requested one when it is installed, otherwise
  * the first available profile. The backend lists profiles in order of preference.
  */
 export function pickProfile(profiles: TerminalProfile[], requestedId?: string): TerminalProfile | undefined {
-  return profiles.find((profile) => profile.id === requestedId && profile.available)
+  const id = requestedId && currentProfileId(requestedId);
+  return profiles.find((profile) => profile.id === id && profile.available)
     ?? profiles.find((profile) => profile.available);
 }
 

@@ -11,8 +11,8 @@ export interface UpdateInfo {
   install: InstallKind;
 }
 
-const CHECKED_KEY = "nebula-terminal.update-checked";
-const DISMISSED_KEY = "nebula-terminal.update-dismissed";
+const CHECKED_KEY = "shelduck.update-checked";
+const DISMISSED_KEY = "shelduck.update-dismissed";
 /** Automatic checks happen at most this often. */
 const CHECK_INTERVAL = 20 * 60 * 60 * 1000;
 
@@ -23,7 +23,7 @@ function previewUpdate(): UpdateInfo | null {
     version: "1.2.0",
     current: version,
     notes: "A made-up release for the browser preview.",
-    url: "https://github.com/awizzz/nebula-terminal/releases/latest",
+    url: "https://github.com/awizzz/shelduck/releases/latest",
     install: "installer",
   };
 }

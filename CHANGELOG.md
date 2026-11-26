@@ -1,12 +1,20 @@
 # Changelog
 
-## Unreleased
+## 3.0.0
+
+Nebula Terminal is now Shelduck. A new name and a new look; what you had set up comes along.
 
 ### Changed
 
+- the app is called Shelduck, after the duck. Its shell is `shelduck-sh`, which reads `~/.shelduckrc`, `~/.shelduck-completions` and `SHELDUCK_*` variables
+- updating replaces Nebula Terminal: the installer removes it and keeps your shortcuts, and the first start brings your settings, sessions, profiles, workspaces and shell history. The old settings folder is left where it was
+- what you wrote for Nebula still works: `~/.nebularc`, `~/.nebula-completions` and `NEBULA_*` variables are read when the new ones aren't there, the `nebula-terminal` command opens Shelduck, and on Linux `nebula-sh` still runs your scripts
+- Open in Shelduck in File Explorer, the default terminal of Windows 11 and the Windows Terminal profile follow the update if you had turned them on
 - a new look: the icon is a shelduck, the default theme is the light Shelduck with Shelduck Night for the dark, the interface is set in Alegreya Sans and the terminal in IBM Plex Mono, both shipped with the app
 - settings left on the Nebula themes, their accent or the old default font move to the new ones; a theme, an accent or a font you picked stays
 - the loading screen draws the bird and colors it in as the app gets ready
+- the prompt's `❯` is red, like the bird's bill, and yellow after a command that failed
+- the project moved to github.com/awizzz/shelduck and shelduck.awizz.space; the old addresses still lead there
 
 ## 2.11.0
 
