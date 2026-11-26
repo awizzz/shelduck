@@ -4,9 +4,23 @@
      This only removes them when the app is uninstalled, not when an update replaces it. -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Fragment>
+    <!-- Before 3.0 the app was Nebula Terminal. Its installer keeps its shortcuts through
+         an update, so they would stay next to Shelduck's: this one takes them away. -->
+    <Property Id="FORMERINSTALLDIR">
+      <RegistrySearch Id="FormerInstallDir" Root="HKCU" Key="Software\awizz\Nebula Terminal" Name="InstallDir" Type="raw" />
+    </Property>
+    <DirectoryRef Id="ProgramMenuFolder">
+      <Directory Id="FormerProgramsFolder" Name="Nebula Terminal" />
+    </DirectoryRef>
+
     <DirectoryRef Id="INSTALLDIR">
       <Component Id="LauncherCleanup" Guid="*">
         <RegistryValue Root="HKCU" Key="Software\Shelduck" Name="Launcher Cleanup" Type="integer" Value="1" KeyPath="yes" />
+        <RemoveFile Id="FormerStartMenuShortcut" Directory="FormerProgramsFolder" Name="Nebula Terminal.lnk" On="install" />
+        <RemoveFolder Id="FormerProgramsFolder" Directory="FormerProgramsFolder" On="install" />
+        <RemoveFile Id="FormerDesktopShortcut" Directory="DesktopFolder" Name="Nebula Terminal.lnk" On="install" />
+        <RemoveFile Id="FormerUninstallShortcut" Property="FORMERINSTALLDIR" Name="Uninstall Nebula Terminal.lnk" On="install" />
+        <RemoveFolder Id="FormerInstallFolder" Property="FORMERINSTALLDIR" On="install" />
         <RemoveRegistryKey Root="HKCU" Key="Software\Classes\Directory\shell\Shelduck" Action="removeOnUninstall" />
         <RemoveRegistryKey Root="HKCU" Key="Software\Classes\Directory\Background\shell\Shelduck" Action="removeOnUninstall" />
         <RemoveRegistryKey Root="HKCU" Key="Software\Classes\Drive\shell\Shelduck" Action="removeOnUninstall" />
