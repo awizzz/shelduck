@@ -240,6 +240,7 @@ export function isCustomTheme(value: unknown): value is TerminalTheme {
     && typeof theme.name === "string"
     && (theme.scheme === "dark" || theme.scheme === "light")
     && [theme.accent, theme.background, theme.foreground].every((color) => normalizeColor(color) === color)
+    && (theme.cursor === undefined || normalizeColor(theme.cursor) === theme.cursor)
     && Array.isArray(theme.ansi)
     && theme.ansi.length === 16
     && theme.ansi.every((color) => normalizeColor(color) === color);

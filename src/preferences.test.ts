@@ -25,8 +25,27 @@ describe("sanitizePreferences", () => {
   });
 
   it("maps retired theme ids", () => {
-    expect(sanitizePreferences({ themeId: "paper" }).themeId).toBe("nebula-light");
-    expect(sanitizePreferences({ themeId: "unknown" }).themeId).toBe("nebula");
+    expect(sanitizePreferences({ themeId: "paper" }).themeId).toBe("shelduck");
+    expect(sanitizePreferences({ themeId: "unknown" }).themeId).toBe("shelduck");
+  });
+
+  it("moves settings left on the Nebula themes to the Shelduck ones", () => {
+    const dark = sanitizePreferences({ themeId: "nebula", accent: "#E8A33D", darkThemeId: "nebula", lightThemeId: "nebula-light" });
+    expect([dark.themeId, dark.accent, dark.darkThemeId, dark.lightThemeId]).toEqual(["shelduck-night", "#d07a45", "shelduck-night", "shelduck"]);
+    const light = sanitizePreferences({ themeId: "nebula-light", accent: "#b86e0e" });
+    expect([light.themeId, light.accent]).toEqual(["shelduck", "#9a4a22"]);
+  });
+
+  it("keeps an accent and a font picked by hand", () => {
+    expect(sanitizePreferences({ themeId: "nebula", accent: "#4c8df6" }).accent).toBe("#4c8df6");
+    expect(sanitizePreferences({ themeId: "dracula", accent: "#e8a33d" }).accent).toBe("#e8a33d");
+    expect(sanitizePreferences({ fontFamily: "Fira Code" }).fontFamily).toBe("Fira Code");
+  });
+
+  it("swaps the former default font for the bundled one", () => {
+    const former = '"Cascadia Mono", "Cascadia Code", Consolas, "JetBrains Mono", "Ubuntu Mono", "DejaVu Sans Mono", "Noto Sans Mono", "Liberation Mono", monospace';
+    expect(sanitizePreferences({ fontFamily: former }).fontFamily).toBe(defaultPreferences.fontFamily);
+    expect(defaultPreferences.fontFamily.startsWith('"IBM Plex Mono"')).toBe(true);
   });
 
   it("fills in shortcuts added after the settings were saved", () => {

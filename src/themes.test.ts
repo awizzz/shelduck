@@ -13,7 +13,7 @@ describe("themes", () => {
   });
 
   it("falls back to the default theme", () => {
-    expect(resolveTheme("missing").id).toBe("nebula");
+    expect(resolveTheme("missing").id).toBe("shelduck");
     expect(normalizeThemeId(42)).toBeUndefined();
   });
 
@@ -23,6 +23,27 @@ describe("themes", () => {
     expect(colors.red).toBe(theme.ansi[1]);
     expect(colors.brightWhite).toBe(theme.ansi[15]);
     expect(colors.cursor).toBe("#123456");
+  });
+
+  it("keeps the red cursor of the Shelduck themes whatever the accent", () => {
+    for (const id of ["shelduck", "shelduck-night"]) {
+      const theme = resolveTheme(id);
+      expect(xtermTheme(theme, "#123456").cursor).toBe(theme.cursor);
+    }
+  });
+
+  it("stays readable in the Shelduck themes", async () => {
+    const { contrastRatio } = await import("./themeImport");
+    for (const id of ["shelduck", "shelduck-night"]) {
+      const theme = resolveTheme(id);
+      // Black on a dark theme and white on a light one sit next to the background, by convention.
+      const skip = theme.scheme === "dark" ? [0] : [7, 15];
+      expect(contrastRatio(theme.foreground, theme.background)).toBeGreaterThanOrEqual(7);
+      expect(contrastRatio(theme.accent, theme.background)).toBeGreaterThanOrEqual(4.5);
+      theme.ansi.forEach((color, index) => {
+        if (!skip.includes(index)) expect(contrastRatio(color, theme.background), `${id} color ${index}`).toBeGreaterThanOrEqual(4);
+      });
+    }
   });
 });
 

@@ -1,4 +1,4 @@
-import { normalizeThemeId, type TerminalTheme } from "./themes";
+import { formerDefaultAccents, normalizeThemeId, resolveTheme, type TerminalTheme } from "./themes";
 import { isCustomTheme, MAX_CUSTOM_THEMES } from "./themeImport";
 import { defaultQuickShortcut, isGlobalShortcut } from "./quickShortcut";
 import { sanitizeLooks } from "./looks";
@@ -62,12 +62,15 @@ export const keybindingLabels: Record<keyof KeybindingPreferences, string> = {
   nextCommand: "Next command",
 };
 
-/** Windows' fonts first, then the ones Linux desktops ship. */
-export const defaultFontFamily = '"Cascadia Mono", "Cascadia Code", Consolas, "JetBrains Mono", "Ubuntu Mono", "DejaVu Sans Mono", "Noto Sans Mono", "Liberation Mono", monospace';
+/** What the terminal was set in before it shipped a typeface of its own. */
+const FORMER_DEFAULT_FONT_FAMILY = '"Cascadia Mono", "Cascadia Code", Consolas, "JetBrains Mono", "Ubuntu Mono", "DejaVu Sans Mono", "Noto Sans Mono", "Liberation Mono", monospace';
+
+/** The bundled typeface, then Windows' fonts and the ones Linux desktops ship for what it lacks. */
+export const defaultFontFamily = `"IBM Plex Mono", ${FORMER_DEFAULT_FONT_FAMILY}`;
 
 export const defaultPreferences: AppearancePreferences = {
-  accent: "#e8a33d",
-  themeId: "nebula",
+  accent: "#9a4a22",
+  themeId: "shelduck",
   fontFamily: defaultFontFamily,
   fontSize: 14,
   lineHeight: 1.2,
@@ -114,8 +117,8 @@ export const defaultPreferences: AppearancePreferences = {
   quickTerminalKeepRunning: true,
   profileLooks: {},
   followSystemTheme: false,
-  darkThemeId: "nebula",
-  lightThemeId: "nebula-light",
+  darkThemeId: "shelduck-night",
+  lightThemeId: "shelduck",
   markAdministratorWindows: true,
   terminalImages: true,
   clipboardWrite: true,
@@ -175,11 +178,17 @@ export function sanitizePreferences(value: unknown): AppearancePreferences {
   const customThemes: TerminalTheme[] = Array.isArray(value.customThemes)
     ? value.customThemes.filter(isCustomTheme).slice(-MAX_CUSTOM_THEMES)
     : [];
+  const themeId = normalizeThemeId(value.themeId, customThemes) ?? defaultPreferences.themeId;
+  // Settings left on the former default theme, accent or font move to today's; anything
+  // picked by hand stays.
+  const formerAccent = typeof value.themeId === "string" ? formerDefaultAccents[value.themeId] : undefined;
+  const untouchedAccent = formerAccent !== undefined && typeof value.accent === "string" && value.accent.toLowerCase() === formerAccent;
+  const fontFamily = stringFrom(value.fontFamily, defaultPreferences.fontFamily, 240).trim();
   return {
-    accent: isHex(value.accent) ? value.accent : defaultPreferences.accent,
-    themeId: normalizeThemeId(value.themeId, customThemes) ?? defaultPreferences.themeId,
+    accent: untouchedAccent ? resolveTheme(themeId, customThemes).accent : isHex(value.accent) ? value.accent : defaultPreferences.accent,
+    themeId,
     customThemes,
-    fontFamily: stringFrom(value.fontFamily, defaultPreferences.fontFamily, 240).trim() || defaultFontFamily,
+    fontFamily: fontFamily && fontFamily !== FORMER_DEFAULT_FONT_FAMILY ? fontFamily : defaultFontFamily,
     fontSize: numberIn(value.fontSize, defaultPreferences.fontSize, 8, 32),
     lineHeight: numberIn(value.lineHeight, defaultPreferences.lineHeight, 1, 2),
     cursorStyle: oneOf(value.cursorStyle, ["block", "bar", "underline"], defaultPreferences.cursorStyle),

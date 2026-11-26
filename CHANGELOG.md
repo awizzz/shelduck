@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- a new look: the icon is a shelduck, the default theme is the light Shelduck with Shelduck Night for the dark, the interface is set in Alegreya Sans and the terminal in IBM Plex Mono, both shipped with the app
+- settings left on the Nebula themes, their accent or the old default font move to the new ones; a theme, an accent or a font you picked stays
+- the loading screen draws the bird and colors it in as the app gets ready
+
 ## 2.11.0
 
 Nebula Terminal runs on Linux: .deb, .rpm and AppImage packages, for x64 and 64-bit Arm.

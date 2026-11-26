@@ -2,7 +2,7 @@ import { isWindows } from "./platform";
 import type { TerminalProfile, TerminalTab } from "./types";
 
 const windowsPreview: TerminalProfile[] = [
-  { id: "nebula", name: "Nebula", kind: "nebula", available: true, executable: "nebula-sh.exe", commandLine: "C:\\Program Files\\Nebula Terminal\\nebula-sh.exe", accent: "#e8a33d" },
+  { id: "nebula", name: "Nebula", kind: "nebula", available: true, executable: "nebula-sh.exe", commandLine: "C:\\Program Files\\Nebula Terminal\\nebula-sh.exe", accent: "#9a4a22" },
   { id: "pwsh", name: "PowerShell", kind: "pwsh", available: true, executable: "pwsh.exe", commandLine: "\"C:\\Program Files\\PowerShell\\7\\pwsh.exe\" -NoLogo", accent: "#5b8def" },
   { id: "powershell", name: "Windows PowerShell", kind: "powershell", available: true, executable: "powershell.exe", commandLine: "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoLogo", accent: "#3f7cc4" },
   { id: "cmd", name: "Command Prompt", kind: "cmd", available: true, executable: "cmd.exe", commandLine: "C:\\Windows\\System32\\cmd.exe", accent: "#9aa3ab" },
@@ -16,7 +16,7 @@ const windowsPreview: TerminalProfile[] = [
 
 const linuxPreview: TerminalProfile[] = [
   { id: "bash", name: "Bash", kind: "bash", available: true, executable: "bash", commandLine: "/usr/bin/bash", accent: "#4eaa25" },
-  { id: "nebula", name: "Nebula", kind: "nebula", available: true, executable: "nebula-sh", commandLine: "/usr/bin/nebula-sh", accent: "#e8a33d" },
+  { id: "nebula", name: "Nebula", kind: "nebula", available: true, executable: "nebula-sh", commandLine: "/usr/bin/nebula-sh", accent: "#9a4a22" },
   { id: "zsh", name: "Zsh", kind: "zsh", available: true, executable: "zsh", commandLine: "/usr/bin/zsh", accent: "#c678dd" },
   { id: "fish", name: "Fish", kind: "fish", available: false, accent: "#4fb0c6" },
   { id: "pwsh", name: "PowerShell", kind: "pwsh", available: false, accent: "#5b8def" },
