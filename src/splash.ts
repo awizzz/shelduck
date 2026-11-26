@@ -1,8 +1,8 @@
 /**
- * The loading screen of index.html: the eleven dots of the ❯ light up as the app gets
- * ready. Every step is a real point of the start, never a timer:
+ * The loading screen of index.html: the bird gets its colors and the line under it runs
+ * on as the app gets ready. Every step is a real point of the start, never a timer:
  *
- *   Starting (2 dots, drawn by index.html) → interface → shells → session → ready (11)
+ *   Starting (2 of 11, drawn by index.html) → interface → shells → session → ready (11)
  *
  * The screen goes as soon as the first shell has drawn its prompt.
  */
@@ -10,15 +10,10 @@
 export type SplashStep = "interface" | "shells" | "session" | "ready";
 
 const LIT: Record<SplashStep, number> = { interface: 4, shells: 6, session: 9, ready: 11 };
-const DOTS = 11;
-/** Delay between two dots lighting up in one step. */
-const STAGGER = 40;
+const FULL = 11;
 /** Never keep the app behind the loading screen longer than this. */
 const LONGEST = 8000;
 const BOOT_KEY = "nebula-terminal.boot.v1";
-/** The mark's viewBox: x and y from 240, 544 wide. */
-const VIEW_ORIGIN = 240;
-const VIEW_SIZE = 544;
 
 let lit = 2;
 let leaving = false;
@@ -39,26 +34,13 @@ function instant(): boolean {
     || matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-/** Lights the first `count` dots, the new ones one after the other, and moves the ripple to the next. */
+/** Runs the line to `count` and paints the colors that come by then. */
 function light(element: HTMLElement, count: number) {
-  const dots = element.querySelectorAll<SVGCircleElement>("circle");
-  dots.forEach((dot, index) => {
-    const on = index < count;
-    if (on && !dot.classList.contains("is-lit")) dot.style.setProperty("--delay", `${Math.max(0, index - lit) * STAGGER}ms`);
-    dot.classList.toggle("is-lit", on);
-  });
-  const pulse = element.querySelector<HTMLElement>(".splash__pulse");
-  const next = dots[count];
-  if (pulse) {
-    pulse.hidden = !next;
-    if (next) {
-      const percent = (value: number) => `${((value / VIEW_SIZE) * 100).toFixed(2)}%`;
-      pulse.style.setProperty("--x", percent(next.cx.baseVal.value - VIEW_ORIGIN));
-      pulse.style.setProperty("--y", percent(next.cy.baseVal.value - VIEW_ORIGIN));
-      pulse.style.setProperty("--size", percent(next.r.baseVal.value * 2));
-    }
-  }
   lit = Math.max(lit, count);
+  element.style.setProperty("--lit", String(lit));
+  element.querySelectorAll<SVGElement>(".splash__paint").forEach((layer) => {
+    layer.classList.toggle("is-lit", lit >= Number(layer.dataset.from));
+  });
   element.setAttribute("aria-valuenow", String(lit));
 }
 
@@ -72,7 +54,7 @@ export function advance(step: SplashStep, label: string): void {
   if (caption) caption.textContent = label;
 }
 
-/** Lights the last dots and fades the screen out. The app behind is usable at once. */
+/** Finishes the drawing and fades the screen out. The app behind is usable at once. */
 export function finish(): void {
   if (leaving) return;
   leaving = true;
@@ -82,17 +64,16 @@ export function finish(): void {
     resolveFinished();
     return;
   }
-  const remaining = DOTS - lit;
-  light(element, DOTS);
+  light(element, FULL);
   element.style.pointerEvents = "none";
-  // The fade overlaps the last dots, so the screen doesn't linger once things are ready.
+  // The fade overlaps the end of the line, so the screen doesn't linger once things are ready.
   window.setTimeout(() => {
     element.dataset.state = "done";
     window.setTimeout(() => {
       element.remove();
       resolveFinished();
     }, 360);
-  }, Math.min(remaining, 3) * STAGGER + 60);
+  }, 160);
 }
 
 if (typeof window !== "undefined") window.setTimeout(finish, LONGEST);

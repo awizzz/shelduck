@@ -41,7 +41,7 @@ const SSH_ACCENT: &str = "#4f9d8f";
 /// default for a fresh install.
 #[cfg(windows)]
 const PROFILES: &[(&str, &str, &str)] = &[
-    ("nebula", "Nebula", "#e8a33d"),
+    ("nebula", "Nebula", "#9a4a22"),
     ("pwsh", "PowerShell", "#5b8def"),
     ("powershell", "Windows PowerShell", "#3f7cc4"),
     ("cmd", "Command Prompt", "#9aa3ab"),
@@ -53,7 +53,7 @@ const PROFILES: &[(&str, &str, &str)] = &[
 /// `detect_all`), so it opens by default.
 #[cfg(not(windows))]
 const PROFILES: &[(&str, &str, &str)] = &[
-    ("nebula", "Nebula", "#e8a33d"),
+    ("nebula", "Nebula", "#9a4a22"),
     ("bash", "Bash", "#4eaa25"),
     ("zsh", "Zsh", "#c678dd"),
     ("fish", "Fish", "#4fb0c6"),

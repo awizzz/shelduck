@@ -7,28 +7,34 @@ export interface TerminalTheme {
   accent: string;
   background: string;
   foreground: string;
+  /** The cursor, when the theme gives it a color of its own rather than the accent. */
+  cursor?: string;
   /** ANSI 0–15: black, red, green, yellow, blue, magenta, cyan, white, then the bright variants. */
   ansi: [string, string, string, string, string, string, string, string, string, string, string, string, string, string, string, string];
 }
 
 export const themes: TerminalTheme[] = [
+  // The shelduck's own colors: white plumage, bottle-green head, chestnut band. Red is
+  // kept for the bill: the cursor and what went wrong.
   {
-    id: "nebula",
-    name: "Nebula",
-    scheme: "dark",
-    accent: "#e8a33d",
-    background: "#111214",
-    foreground: "#d9dce1",
-    ansi: ["#1d1f23", "#ee6f78", "#8ccf87", "#e4bd76", "#6fa6f8", "#c39ce8", "#5fc0cc", "#c7cbd2", "#5d636e", "#ff8a92", "#a6e2a1", "#f1d091", "#8fbcff", "#d5b4f5", "#80d6e0", "#f2f4f7"],
+    id: "shelduck",
+    name: "Shelduck",
+    scheme: "light",
+    accent: "#9a4a22",
+    background: "#f1f2ec",
+    foreground: "#11231c",
+    cursor: "#d4372b",
+    ansi: ["#11231c", "#b92c21", "#2c6b3f", "#85620c", "#2a5d8c", "#8a3c6c", "#17706c", "#c9cdc2", "#5f6b62", "#d4372b", "#357a4a", "#9a6a10", "#346fa3", "#a5507f", "#1f7d76", "#e3e5dd"],
   },
   {
-    id: "nebula-light",
-    name: "Nebula Light",
-    scheme: "light",
-    accent: "#b86e0e",
-    background: "#fbfaf7",
-    foreground: "#2a2c30",
-    ansi: ["#2a2c30", "#c23a4c", "#38823b", "#9a6700", "#2c65cf", "#9343b0", "#0d7d8c", "#d6d5d0", "#6a6e77", "#d64b5d", "#47984a", "#b17c0d", "#467de3", "#a95bc6", "#1d93a3", "#f2f1ec"],
+    id: "shelduck-night",
+    name: "Shelduck Night",
+    scheme: "dark",
+    accent: "#d07a45",
+    background: "#11231c",
+    foreground: "#e6e8df",
+    cursor: "#e2473a",
+    ansi: ["#1d342b", "#ec6a5c", "#84c08f", "#d9b566", "#84add2", "#cd95b8", "#76c0b6", "#cfd4c9", "#7d8b81", "#f58b7e", "#a1d6aa", "#e9ca85", "#a3c5e4", "#e0b1cf", "#97d6cd", "#f1f2ec"],
   },
   {
     id: "campbell",
@@ -117,12 +123,17 @@ export const themes: TerminalTheme[] = [
 
 /** Older releases stored these theme ids; map them to their closest replacement. */
 const legacyThemeIds: Record<string, string> = {
-  carbon: "nebula",
-  boreal: "nebula",
-  ember: "nebula",
-  tide: "nebula",
-  paper: "nebula-light",
+  carbon: "shelduck-night",
+  boreal: "shelduck-night",
+  ember: "shelduck-night",
+  tide: "shelduck-night",
+  paper: "shelduck",
+  nebula: "shelduck-night",
+  "nebula-light": "shelduck",
 };
+
+/** The accents of the two themes Shelduck's replaced, as they were stored when left alone. */
+export const formerDefaultAccents: Record<string, string> = { nebula: "#e8a33d", "nebula-light": "#b86e0e" };
 
 /** A theme id that exists, among the built-in themes and the imported ones. */
 export function normalizeThemeId(id: unknown, custom: readonly TerminalTheme[] = []): string | undefined {
@@ -140,7 +151,7 @@ export function xtermTheme(theme: TerminalTheme, accent: string) {
   return {
     background: theme.background,
     foreground: theme.foreground,
-    cursor: accent,
+    cursor: theme.cursor ?? accent,
     cursorAccent: theme.background,
     selectionBackground: `${accent}${theme.scheme === "light" ? "40" : "4d"}`,
     scrollbarSliderBackground: `${theme.foreground}1f`,
@@ -152,7 +163,7 @@ export function xtermTheme(theme: TerminalTheme, accent: string) {
 }
 
 /** Accent colors offered as one-click swatches in Settings. */
-export const accentSwatches = ["#e8a33d", "#e5734a", "#e05d6f", "#c879d8", "#8b8cf0", "#4c8df6", "#2fa8c9", "#3fb27f", "#9aa3ab"];
+export const accentSwatches = ["#9a4a22", "#d07a45", "#e8a33d", "#e5734a", "#e05d6f", "#c879d8", "#8b8cf0", "#4c8df6", "#2fa8c9", "#3fb27f", "#9aa3ab"];
 
 /** Tab colors. Mid-tone on purpose: they have to read on dark and light themes alike. */
 export const tabColors: Array<{ id: TabColor; name: string; value: string }> = [

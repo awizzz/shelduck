@@ -70,8 +70,8 @@ const pages: Array<{ id: SettingsPage; label: string; icon: typeof Palette }> = 
 ];
 
 const monospaceFonts = isWindows
-  ? ["Cascadia Mono", "Cascadia Code", "Consolas", "JetBrains Mono", "Fira Code", "Source Code Pro", "Iosevka", "Hack", "Lucida Console"]
-  : ["DejaVu Sans Mono", "Ubuntu Mono", "Noto Sans Mono", "Liberation Mono", "JetBrains Mono", "Fira Code", "Source Code Pro", "Iosevka", "Hack", "Cascadia Code"];
+  ? ["IBM Plex Mono", "Cascadia Mono", "Cascadia Code", "Consolas", "JetBrains Mono", "Fira Code", "Source Code Pro", "Iosevka", "Hack", "Lucida Console"]
+  : ["IBM Plex Mono", "DejaVu Sans Mono", "Ubuntu Mono", "Noto Sans Mono", "Liberation Mono", "JetBrains Mono", "Fira Code", "Source Code Pro", "Iosevka", "Hack", "Cascadia Code"];
 const REPOSITORY = "https://github.com/awizzz/nebula-terminal";
 
 /**

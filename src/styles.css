@@ -1,17 +1,18 @@
 /*
- * Nebula Terminal design tokens.
+ * Design tokens.
  * App.tsx sets --term-bg, --term-fg, --term-surface, --accent and --on-accent from the
  * active theme; everything else is derived here so light and dark themes share one sheet.
  */
 :root {
-  --ui-font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --mono-font: "Cascadia Mono", Consolas, monospace;
+  /* Both bundled: public/fonts.css. */
+  --ui-font: "Alegreya Sans", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono-font: "IBM Plex Mono", "Cascadia Mono", Consolas, monospace;
 
-  --term-bg: #111214;
-  --term-fg: #d9dce1;
+  --term-bg: #f1f2ec;
+  --term-fg: #11231c;
   --term-surface: var(--term-bg);
-  --accent: #e8a33d;
-  --on-accent: #141414;
+  --accent: #9a4a22;
+  --on-accent: #ffffff;
 
   --chrome: color-mix(in oklab, var(--term-bg) 72%, #000);
   --surface: color-mix(in oklab, var(--term-bg) 90%, var(--term-fg));
@@ -1160,7 +1161,7 @@ kbd { font: inherit; }
   white-space: pre-wrap;
   word-break: break-all;
 }
-.arg-chip em { color: var(--text-3); font: italic 11px/18px var(--ui-font); }
+.arg-chip em { color: var(--text-3); font: 11px/18px var(--ui-font); }
 .icon-button:disabled, .button:disabled { opacity: 0.45; pointer-events: none; }
 
 .theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }

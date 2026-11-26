@@ -12,7 +12,7 @@
         var value = color(entry[1]);
         if (value) root.style.setProperty(entry[0], value);
       });
-      if (boot.scheme === "light") root.dataset.scheme = "light";
+      if (boot.scheme === "light" || boot.scheme === "dark") root.dataset.scheme = boot.scheme;
       if (boot.animation === "reduced" || boot.animation === "off") root.dataset.animation = boot.animation;
     }
   } catch (error) {
