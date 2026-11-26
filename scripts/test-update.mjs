@@ -8,6 +8,7 @@
 
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { createServer } from "node:net";
 import { join, resolve } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
@@ -30,9 +31,17 @@ const formerFragment = join(fragments, "Nebula Terminal", "nebula.json");
 const fragment = join(fragments, "Shelduck", "shelduck.json");
 const menuKey = (name) => `HKCU\\Software\\Classes\\Directory\\shell\\${name}`;
 
-// The web view listens here, so the test can read and write the app's settings.
-const debugPort = 9222;
-const debugging = { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${debugPort} --remote-allow-origins=*` };
+// The web view listens on a port Windows just handed out (a fixed one may be reserved
+// on the runner), so the test can read and write the app's settings.
+const debugPort = await new Promise((found, failed) => {
+  const server = createServer().once("error", failed);
+  server.listen(0, "127.0.0.1", () => {
+    const { port } = server.address();
+    server.close(() => found(port));
+  });
+});
+process.env.WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = `--remote-debugging-port=${debugPort} --remote-allow-origins=*`;
+let debuggerSaid = "nothing";
 const FONT_SIZE = 17;
 
 const run = (file, args, options = {}) => spawnSync(file, args, { encoding: "utf8", windowsHide: true, ...options });
@@ -71,13 +80,15 @@ async function stop(image) {
   await sleep(5000);
 }
 
-const start = (exe) => spawn(exe, [], { env: debugging, detached: true, stdio: "ignore" }).unref();
+const start = (exe) => spawn(exe, [], { detached: true, stdio: "ignore" }).unref();
 
 async function page() {
   try {
     const targets = await (await fetch(`http://127.0.0.1:${debugPort}/json`)).json();
+    debuggerSaid = JSON.stringify(targets.map(({ type, url }) => ({ type, url })));
     return targets.find((target) => target.type === "page" && target.url.includes("tauri.localhost"));
-  } catch {
+  } catch (error) {
+    debuggerSaid = String(error.cause ?? error);
     return undefined;
   }
 }
@@ -149,6 +160,9 @@ function describe() {
   }
   console.log("PATH:", userPath().trim());
   console.log(output("tasklist", ["/FO", "CSV", "/NH"]).split(/\r?\n/).filter((line) => /nebula|shelduck|webview/i.test(line)).join("\n"));
+  console.log(`debugger on port ${debugPort}:`, debuggerSaid);
+  const webViews = "Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'msedgewebview2.exe' -and $_.CommandLine -notmatch '--type=' } | ForEach-Object CommandLine";
+  console.log("web views:", output("powershell", ["-NoProfile", "-Command", webViews]).trim());
 }
 
 async function test() {
