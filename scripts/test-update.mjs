@@ -95,8 +95,7 @@ async function page() {
   }
 }
 
-/** Runs `expression` in the app's page and returns its value. */
-async function evaluate(expression) {
+async function evaluateOnce(expression) {
   const target = await until("the app's page answers", 90, page);
   const socket = new WebSocket(target.webSocketDebuggerUrl);
   try {
@@ -112,10 +111,24 @@ async function evaluate(expression) {
     });
     socket.send(JSON.stringify({ id: 1, method: "Runtime.evaluate", params: { expression, returnByValue: true } }));
     const { result } = await reply;
-    if (result.exceptionDetails) throw new Error(`${expression}: ${result.exceptionDetails.text}`);
+    const thrown = result.exceptionDetails;
+    if (thrown) throw new Error(`The app's page threw ${thrown.exception?.description ?? thrown.text}`);
     return result.result.value;
   } finally {
     socket.close();
+  }
+}
+
+/** Runs `expression` in the app's page and returns its value. */
+async function evaluate(expression) {
+  // A page that is still loading refuses its storage: it is asked again.
+  for (let tries = 1; ; tries += 1) {
+    try {
+      return await evaluateOnce(expression);
+    } catch (error) {
+      if (tries === 20) throw error;
+      await sleep(1000);
+    }
   }
 }
 
