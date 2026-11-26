@@ -284,6 +284,8 @@ try {
   for (const root of [local, roaming]) {
     for (const name of ["dev.awizz.nebula-terminal", "dev.awizz.shelduck"]) rmSync(join(root, name), { recursive: true, force: true, maxRetries: 5, retryDelay: 1000 });
   }
+  // Each installer notes its folder there, and the MSI installs where the last one did.
+  for (const name of ["Nebula Terminal", "Shelduck"]) run("reg", ["delete", `HKCU\\Software\\awizz\\${name}`, "/f"]);
   rmSync(join(fragments, "Shelduck"), { recursive: true, force: true });
   rmSync(join(fragments, "Nebula Terminal"), { recursive: true, force: true });
 }
