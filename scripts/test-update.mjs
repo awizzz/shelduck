@@ -31,8 +31,9 @@ const formerFragment = join(fragments, "Nebula Terminal", "nebula.json");
 const fragment = join(fragments, "Shelduck", "shelduck.json");
 const menuKey = (name) => `HKCU\\Software\\Classes\\Directory\\shell\\${name}`;
 
-// The web view listens on a port Windows just handed out (a fixed one may be reserved
-// on the runner), so the test can read and write the app's settings.
+// The web view listens on a port Windows just handed out, so the test can read and write
+// the app's settings. It is asked to through the machine's policy: started by an
+// administrator, as on the runner, WebView2 ignores WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS.
 const debugPort = await new Promise((found, failed) => {
   const server = createServer().once("error", failed);
   server.listen(0, "127.0.0.1", () => {
@@ -40,7 +41,8 @@ const debugPort = await new Promise((found, failed) => {
     server.close(() => found(port));
   });
 });
-process.env.WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = `--remote-debugging-port=${debugPort} --remote-allow-origins=*`;
+const debugPolicy = "HKLM\\Software\\Policies\\Microsoft\\Edge\\WebView2\\AdditionalBrowserArguments";
+const images = ["nebula-terminal.exe", "shelduck.exe"];
 let debuggerSaid = "nothing";
 const FONT_SIZE = 17;
 
@@ -166,6 +168,11 @@ function describe() {
 }
 
 async function test() {
+  for (const image of images) {
+    const added = run("reg", ["add", debugPolicy, "/v", image, "/t", "REG_SZ", "/d", `--remote-debugging-port=${debugPort} --remote-allow-origins=*`, "/f"]);
+    if (added.status !== 0) throw new Error(`The debugger policy for ${image} was refused: ${added.stderr.trim()}`);
+  }
+
   step(`Nebula Terminal 2.11.0 (${kind})`);
   if (kind === "nsis") install(resolve(formerInstaller), ["/S"]);
   else msiexec("/i", resolve(formerInstaller), "/quiet");
@@ -212,7 +219,7 @@ async function test() {
   if (onDesktop(formerShortcuts)) check(onDesktop(shortcuts("Shelduck")), "Shelduck took the desktop shortcut");
 
   step("Settings and launchers in Shelduck");
-  // Started again with the debugger: the copy the installer started doesn't have it.
+  // Started again, so what is read is what Shelduck kept on disk.
   await sleep(10000);
   await stop("shelduck.exe");
   start(app);
@@ -255,7 +262,10 @@ try {
   describe();
   process.exitCode = 1;
 } finally {
-  for (const image of ["nebula-terminal.exe", "shelduck.exe"]) run("taskkill", ["/IM", image, "/F", "/T"]);
+  for (const image of images) {
+    run("taskkill", ["/IM", image, "/F", "/T"]);
+    run("reg", ["delete", debugPolicy, "/v", image, "/f"]);
+  }
   await sleep(3000);
   // The next run starts from a machine that never had either app.
   for (const root of [local, roaming]) {
