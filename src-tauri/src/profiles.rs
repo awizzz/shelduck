@@ -41,7 +41,7 @@ const SSH_ACCENT: &str = "#4f9d8f";
 /// default for a fresh install.
 #[cfg(windows)]
 const PROFILES: &[(&str, &str, &str)] = &[
-    ("nebula", "Nebula", "#9a4a22"),
+    ("shelduck", "Shelduck", "#9a4a22"),
     ("pwsh", "PowerShell", "#5b8def"),
     ("powershell", "Windows PowerShell", "#3f7cc4"),
     ("cmd", "Command Prompt", "#9aa3ab"),
@@ -53,7 +53,7 @@ const PROFILES: &[(&str, &str, &str)] = &[
 /// `detect_all`), so it opens by default.
 #[cfg(not(windows))]
 const PROFILES: &[(&str, &str, &str)] = &[
-    ("nebula", "Nebula", "#9a4a22"),
+    ("shelduck", "Shelduck", "#9a4a22"),
     ("bash", "Bash", "#4eaa25"),
     ("zsh", "Zsh", "#c678dd"),
     ("fish", "Fish", "#4fb0c6"),
@@ -156,14 +156,14 @@ fn find_git_bash() -> Option<PathBuf> {
         .find(|candidate| candidate.is_file())
 }
 
-/// Places where the bundled `nebula-sh` interpreter can be: next to the app (installed
+/// Places where the bundled `shelduck-sh` interpreter can be: next to the app (installed
 /// builds, where Tauri puts sidecars), the sidecar staging folder, or a Cargo target
-/// folder during development. `NEBULA_SH` overrides them all.
-fn nebula_candidates(app_dir: &Path) -> Vec<PathBuf> {
+/// folder during development. `SHELDUCK_SH` overrides them all.
+fn shelduck_candidates(app_dir: &Path) -> Vec<PathBuf> {
     let name = if cfg!(windows) {
-        "nebula-sh.exe"
+        "shelduck-sh.exe"
     } else {
-        "nebula-sh"
+        "shelduck-sh"
     };
     let mut candidates = vec![app_dir.join(name)];
     for ancestor in app_dir.ancestors().take(6) {
@@ -173,12 +173,12 @@ fn nebula_candidates(app_dir: &Path) -> Vec<PathBuf> {
     candidates
 }
 
-fn find_nebula() -> Option<PathBuf> {
-    if let Some(explicit) = env::var_os("NEBULA_SH").map(PathBuf::from) {
+fn find_shelduck() -> Option<PathBuf> {
+    if let Some(explicit) = env::var_os("SHELDUCK_SH").map(PathBuf::from) {
         return explicit.is_file().then_some(explicit);
     }
     let exe = env::current_exe().ok()?;
-    nebula_candidates(exe.parent()?)
+    shelduck_candidates(exe.parent()?)
         .into_iter()
         .find(|candidate| candidate.is_file())
 }
@@ -186,7 +186,7 @@ fn find_nebula() -> Option<PathBuf> {
 fn locate(id: &str) -> Option<ResolvedProfile> {
     #[cfg(windows)]
     let (executable, args): (Option<PathBuf>, &[&str]) = match id {
-        "nebula" => (find_nebula(), &[]),
+        "shelduck" => (find_shelduck(), &[]),
         "pwsh" => (find_executable("pwsh.exe"), &["-NoLogo"]),
         "powershell" => (find_executable("powershell.exe"), &["-NoLogo"]),
         "cmd" => (find_executable("cmd.exe"), &[]),
@@ -196,7 +196,7 @@ fn locate(id: &str) -> Option<ResolvedProfile> {
     };
     #[cfg(not(windows))]
     let (executable, args): (Option<PathBuf>, &[&str]) = match id {
-        "nebula" => (find_nebula(), &[]),
+        "shelduck" => (find_shelduck(), &[]),
         "bash" | "zsh" | "fish" => (find_executable(id), &[]),
         "pwsh" => (find_executable("pwsh"), &["-NoLogo"]),
         _ => (None, &[]),
@@ -679,7 +679,7 @@ mod tests {
 
     fn scratch(name: &str) -> PathBuf {
         let directory =
-            env::temp_dir().join(format!("nebula-profiles-{name}-{}", std::process::id()));
+            env::temp_dir().join(format!("shelduck-profiles-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&directory);
         fs::create_dir_all(&directory).unwrap();
         directory
@@ -727,13 +727,13 @@ mod tests {
     }
 
     #[test]
-    fn looks_for_nebula_next_to_the_app_first() {
-        let app = Path::new("/apps/nebula");
-        let candidates = nebula_candidates(app);
+    fn looks_for_shelduck_next_to_the_app_first() {
+        let app = Path::new("/apps/shelduck");
+        let candidates = shelduck_candidates(app);
         let name = if cfg!(windows) {
-            "nebula-sh.exe"
+            "shelduck-sh.exe"
         } else {
-            "nebula-sh"
+            "shelduck-sh"
         };
         assert_eq!(candidates[0], app.join(name));
         assert!(candidates.contains(&Path::new("/target/debug").join(name)));
@@ -816,7 +816,7 @@ mod tests {
             ..profile(id.into(), id.into(), id, "#123456", None)
         };
         let mut profiles = vec![
-            installed("nebula", true),
+            installed("shelduck", true),
             installed("bash", true),
             installed("zsh", true),
             installed("fish", false),
@@ -840,7 +840,7 @@ mod tests {
         fs::write(
             &path,
             format!(
-                r##"{{"version":1,"profiles":[{{"id":"{id}","name":"Gone","executable":"nebula-surely-missing-tool","accent":"#123456"}}]}}"##
+                r##"{{"version":1,"profiles":[{{"id":"{id}","name":"Gone","executable":"shelduck-surely-missing-tool","accent":"#123456"}}]}}"##
             ),
         )
         .unwrap();
@@ -871,14 +871,14 @@ mod tests {
 
     #[test]
     fn expands_environment_variables_and_keeps_unknown_ones() {
-        env::set_var("NEBULA_TEST_DIR", "projects");
+        env::set_var("SHELDUCK_TEST_DIR", "projects");
         assert_eq!(
-            expand_directory("C:/%NEBULA_TEST_DIR%/app"),
+            expand_directory("C:/%SHELDUCK_TEST_DIR%/app"),
             PathBuf::from("C:/projects/app")
         );
         assert_eq!(
-            expand_directory("%NEBULA_UNSET_VAR%/x"),
-            PathBuf::from("%NEBULA_UNSET_VAR%/x")
+            expand_directory("%SHELDUCK_UNSET_VAR%/x"),
+            PathBuf::from("%SHELDUCK_UNSET_VAR%/x")
         );
         assert_eq!(expand_directory("50%"), PathBuf::from("50%"));
     }

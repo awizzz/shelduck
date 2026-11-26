@@ -1,5 +1,5 @@
-// Builds the Nebula interpreter (crates/nebula-sh) and stages it where Tauri expects
-// sidecar binaries: src-tauri/binaries/nebula-sh-<target-triple>[.exe].
+// Builds the Shelduck interpreter (crates/shelduck-sh) and stages it where Tauri expects
+// sidecar binaries: src-tauri/binaries/shelduck-sh-<target-triple>[.exe].
 //
 //   node scripts/build-sidecar.mjs            debug build
 //   node scripts/build-sidecar.mjs --release  release build
@@ -23,11 +23,11 @@ const triple = (option >= 0 ? process.argv[option + 1] : undefined) ?? process.e
 // The host build stays in target/<profile>, where the release workflow looks for it.
 const cross = triple !== host;
 
-execFileSync("cargo", ["build", "--locked", "-p", "nebula-sh", ...(release ? ["--release"] : []), ...(cross ? ["--target", triple] : [])], { cwd: root, stdio: "inherit" });
+execFileSync("cargo", ["build", "--locked", "-p", "shelduck-sh", ...(release ? ["--release"] : []), ...(cross ? ["--target", triple] : [])], { cwd: root, stdio: "inherit" });
 
 const extension = triple.includes("windows") ? ".exe" : "";
-const source = join(root, "target", ...(cross ? [triple] : []), release ? "release" : "debug", `nebula-sh${extension}`);
-const target = join(root, "src-tauri", "binaries", `nebula-sh-${triple}${extension}`);
+const source = join(root, "target", ...(cross ? [triple] : []), release ? "release" : "debug", `shelduck-sh${extension}`);
+const target = join(root, "src-tauri", "binaries", `shelduck-sh-${triple}${extension}`);
 mkdirSync(dirname(target), { recursive: true });
 copyFileSync(source, target);
 console.log(`Staged ${target}`);

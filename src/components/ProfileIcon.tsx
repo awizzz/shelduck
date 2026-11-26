@@ -40,7 +40,7 @@ export default function ProfileIcon({ kind, accent, size = 16 }: { kind: Profile
     );
   }
 
-  if (kind === "nebula") {
+  if (kind === "shelduck") {
     return (
       <svg {...common}>
         <clipPath id="profile-icon-tile"><rect width="16" height="16" rx="3" /></clipPath>

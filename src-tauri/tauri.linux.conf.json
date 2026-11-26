@@ -14,14 +14,34 @@
     ],
     "category": "DeveloperTool",
     "shortDescription": "A good-looking terminal with tabs, split panes and live theming",
-    "longDescription": "Nebula Terminal runs bash, zsh, fish and Nebula, a shell with the usual Linux commands built in, with tabs, split panes, command blocks and live visual customization.",
+    "longDescription": "Shelduck runs bash, zsh, fish and its own shell, which has the usual Linux commands built in, with tabs, split panes, command blocks and live visual customization.",
     "linux": {
       "deb": {
         "section": "x11",
-        "desktopTemplate": "linux/nebula-terminal.desktop"
+        "desktopTemplate": "linux/shelduck.desktop",
+        "conflicts": [
+          "nebula-terminal"
+        ],
+        "replaces": [
+          "nebula-terminal"
+        ],
+        "provides": [
+          "nebula-terminal"
+        ],
+        "files": {
+          "/usr/bin/nebula-terminal": "linux/nebula-terminal",
+          "/usr/bin/nebula-sh": "linux/nebula-sh"
+        }
       },
       "rpm": {
-        "desktopTemplate": "linux/nebula-terminal.desktop"
+        "desktopTemplate": "linux/shelduck.desktop",
+        "obsoletes": [
+          "nebula-terminal"
+        ],
+        "files": {
+          "/usr/bin/nebula-terminal": "linux/nebula-terminal",
+          "/usr/bin/nebula-sh": "linux/nebula-sh"
+        }
       },
       "appimage": {
         "bundleMediaFramework": false

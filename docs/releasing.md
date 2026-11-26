@@ -8,7 +8,7 @@ The version lives in four files and they must match:
 
 - `package.json` (also run `npm install` so `package-lock.json` follows)
 - `src-tauri/tauri.conf.json`
-- `src-tauri/Cargo.toml` and `crates/nebula-sh/Cargo.toml` (then `cargo check --workspace` to update `Cargo.lock`)
+- `src-tauri/Cargo.toml` and `crates/shelduck-sh/Cargo.toml` (then `cargo check --workspace` to update `Cargo.lock`)
 
 Add a `## <version>` section at the top of `CHANGELOG.md`. The workflow uses it as the release notes.
 
@@ -26,27 +26,28 @@ Instead of tagging, you can run the **Release** workflow from the Actions tab wi
 ## What gets published
 
 ```text
-Nebula.Terminal_<version>_x64-setup.exe          NSIS installer
-Nebula.Terminal_<version>_x64_en-US.msi          MSI installer
-Nebula-Terminal-<version>-windows-x64-portable.zip   includes nebula-sh.exe
-Nebula.Terminal_<version>_arm64-setup.exe        NSIS installer for Windows on Arm
-Nebula-Terminal-<version>-windows-arm64-portable.zip
-nebula-terminal.json                             Scoop manifest for the portable zip
-Nebula.Terminal_<version>_amd64.deb              Debian and Ubuntu
-Nebula.Terminal-<version>-1.x86_64.rpm           Fedora, openSUSE, RHEL
-Nebula.Terminal_<version>_amd64.AppImage         any distribution, updates itself
-Nebula.Terminal_<version>_arm64.deb              the same for 64-bit Arm
-Nebula.Terminal-<version>-1.aarch64.rpm
-Nebula.Terminal_<version>_aarch64.AppImage
+Shelduck_<version>_x64-setup.exe          NSIS installer
+Shelduck_<version>_x64_en-US.msi          MSI installer
+Shelduck-<version>-windows-x64-portable.zip   includes shelduck-sh.exe
+Shelduck_<version>_arm64-setup.exe        NSIS installer for Windows on Arm
+Shelduck-<version>-windows-arm64-portable.zip
+shelduck.json                             Scoop manifest for the portable zip
+nebula-terminal.json                      the same, where Scoop installs from before 3.0 look for it
+Shelduck_<version>_amd64.deb              Debian and Ubuntu
+Shelduck-<version>-1.x86_64.rpm           Fedora, openSUSE, RHEL
+Shelduck_<version>_amd64.AppImage         any distribution, updates itself
+Shelduck_<version>_arm64.deb              the same for 64-bit Arm
+Shelduck-<version>-1.aarch64.rpm
+Shelduck_<version>_aarch64.AppImage
 SHA256SUMS.txt
 ```
 
-`scripts/scoop-manifest.ps1` writes the Scoop manifest. People install from `releases/latest/download/nebula-terminal.json`, and Scoop reads that address again on `scoop update`, so a release needs nothing else for Scoop. Pre-releases never reach it, since `latest` skips them.
+`scripts/scoop-manifest.ps1` writes the Scoop manifest. People install from `releases/latest/download/shelduck.json`, and Scoop reads that address again on `scoop update`, so a release needs nothing else for Scoop. Pre-releases never reach it, since `latest` skips them.
 
 When the repository is public, each file also gets a GitHub build-provenance attestation:
 
 ```powershell
-gh attestation verify '.\Nebula.Terminal_1.0.0_x64-setup.exe' --repo awizzz/nebula-terminal
+gh attestation verify '.\Shelduck_3.0.0_x64-setup.exe' --repo awizzz/shelduck
 ```
 
 Releases are not Authenticode-signed yet. Never commit certificates, signing tokens or private keys.

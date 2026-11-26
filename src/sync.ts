@@ -8,7 +8,7 @@ import type { AppearancePreferences } from "./types";
  */
 const LOCAL_ONLY = ["explorerMenu", "pathCommand", "windowsTerminalProfile", "startingFolder", "workingDirectory", "fileOpener", "fileOpenerCommand", "backgroundImage", "syncFile"] as const satisfies ReadonlyArray<keyof AppearancePreferences>;
 
-const STATE_KEY = "nebula-terminal.sync.v1";
+const STATE_KEY = "shelduck.sync.v1";
 
 export interface SyncState {
   /** When the settings this PC has were saved, here or on another PC. */
@@ -30,14 +30,14 @@ export function digestOf(preferences: AppearancePreferences): string {
 }
 
 export function syncDocument(preferences: AppearancePreferences, savedAt: number): string {
-  return `${JSON.stringify({ app: "Nebula Terminal", version: 1, savedAt, preferences: syncedPart(preferences) }, null, 2)}\n`;
+  return `${JSON.stringify({ app: "Shelduck", version: 1, savedAt, preferences: syncedPart(preferences) }, null, 2)}\n`;
 }
 
 /** The settings in a sync file, or null when it isn't one. */
 export function readSyncDocument(text: string): { savedAt: number; preferences: Record<string, unknown> } | null {
   try {
     const parsed = JSON.parse(text) as { app?: unknown; version?: unknown; savedAt?: unknown; preferences?: unknown };
-    if (parsed.app !== "Nebula Terminal" || parsed.version !== 1 || typeof parsed.savedAt !== "number") return null;
+    if ((parsed.app !== "Shelduck" && parsed.app !== "Nebula Terminal") || parsed.version !== 1 || typeof parsed.savedAt !== "number") return null;
     if (typeof parsed.preferences !== "object" || parsed.preferences === null || Array.isArray(parsed.preferences)) return null;
     return { savedAt: parsed.savedAt, preferences: parsed.preferences as Record<string, unknown> };
   } catch {

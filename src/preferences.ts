@@ -2,6 +2,7 @@ import { formerDefaultAccents, normalizeThemeId, resolveTheme, type TerminalThem
 import { isCustomTheme, MAX_CUSTOM_THEMES } from "./themeImport";
 import { defaultQuickShortcut, isGlobalShortcut } from "./quickShortcut";
 import { sanitizeLooks } from "./looks";
+import { currentProfileId } from "./profiles";
 import { sanitizeSavedCommands } from "./savedCommands";
 import { sanitizeHighlights } from "./highlights";
 import { download } from "./download";
@@ -133,8 +134,8 @@ export const defaultPreferences: AppearancePreferences = {
   keybindings: defaultKeybindings,
 };
 
-const STORAGE_KEY = "nebula-terminal.preferences.v4";
-const LEGACY_STORAGE_KEYS = ["nebula-terminal.preferences.v3", "nebula-terminal.preferences.v2"];
+const STORAGE_KEY = "shelduck.preferences.v4";
+const LEGACY_STORAGE_KEYS = ["shelduck.preferences.v3", "shelduck.preferences.v2"];
 
 /** Whether a local storage key holds the settings, for windows that follow each other's changes. */
 export const isPreferencesKey = (key: string) => key === STORAGE_KEY;
@@ -201,7 +202,7 @@ export function sanitizePreferences(value: unknown): AppearancePreferences {
     animationLevel: oneOf(value.animationLevel, ["full", "reduced", "off"], defaultPreferences.animationLevel),
     tabDensity: oneOf(value.tabDensity, ["comfortable", "compact"], defaultPreferences.tabDensity),
     tabPosition: oneOf(value.tabPosition, ["top", "side"], defaultPreferences.tabPosition),
-    defaultProfileId: stringFrom(value.defaultProfileId, defaultPreferences.defaultProfileId, 80),
+    defaultProfileId: currentProfileId(stringFrom(value.defaultProfileId, defaultPreferences.defaultProfileId, 80)),
     // Before 1.2 a typed folder was the only choice; keep it for people who set one.
     startingFolder: oneOf(value.startingFolder, ["home", "desktop", "documents", "custom"], typeof value.workingDirectory === "string" && value.workingDirectory.trim() ? "custom" : defaultPreferences.startingFolder),
     workingDirectory: stringFrom(value.workingDirectory, defaultPreferences.workingDirectory, 1024),
@@ -292,7 +293,7 @@ export function savePreferences(value: AppearancePreferences): void {
 export function exportAppearance(preferences: AppearancePreferences): void {
   // An imported color scheme travels with the file that uses it.
   const customTheme = preferences.customThemes.find((theme) => theme.id === preferences.themeId);
-  download("nebula-terminal-theme.json", JSON.stringify({ version: 2, appearance: pickThemePreferences(preferences), customTheme }, null, 2));
+  download("shelduck-theme.json", JSON.stringify({ version: 2, appearance: pickThemePreferences(preferences), customTheme }, null, 2));
 }
 
 /**
@@ -303,7 +304,7 @@ export async function importAppearance(file: File): Promise<(current: Appearance
   if (file.size > 1_000_000) throw new Error("This theme file is too large.");
   const parsed = JSON.parse(await file.text()) as { version?: number; appearance?: unknown; preferences?: unknown; customTheme?: unknown };
   const imported = parsed.version === 2 ? parsed.appearance : parsed.version === 1 ? parsed.preferences : undefined;
-  if (!isRecord(imported)) throw new Error("This is not a Nebula Terminal theme file.");
+  if (!isRecord(imported)) throw new Error("This is not a Shelduck theme file.");
   const customTheme = isCustomTheme(parsed.customTheme) ? parsed.customTheme : null;
   return (current) => {
     const customThemes = customTheme

@@ -2,9 +2,12 @@ import { sanitizePreferences } from "./preferences";
 import { sanitizeWorkspaces, type Workspace } from "./workspaces";
 import type { AppearancePreferences } from "./types";
 
+/** Backups written before the app was renamed still open. */
+const APP_NAMES = ["shelduck", "nebula-terminal"];
+
 /** Every setting and the workspaces, as a file to bring back later or on another PC. */
 export function backupDocument(preferences: AppearancePreferences, workspaces: Workspace[], savedAt = Date.now()): string {
-  return `${JSON.stringify({ app: "nebula-terminal", kind: "backup", version: 1, savedAt, preferences, workspaces }, null, 2)}\n`;
+  return `${JSON.stringify({ app: "shelduck", kind: "backup", version: 1, savedAt, preferences, workspaces }, null, 2)}\n`;
 }
 
 export interface Backup {
@@ -20,11 +23,11 @@ export function readBackup(text: string): Backup {
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new Error("This file isn't a Nebula Terminal backup.");
+    throw new Error("This file isn't a Shelduck backup.");
   }
   const document = parsed as { app?: unknown; kind?: unknown; savedAt?: unknown; preferences?: unknown; workspaces?: unknown };
-  if (typeof parsed !== "object" || parsed === null || document.app !== "nebula-terminal" || document.kind !== "backup") {
-    throw new Error("This file isn't a Nebula Terminal backup.");
+  if (typeof parsed !== "object" || parsed === null || !APP_NAMES.includes(document.app as string) || document.kind !== "backup") {
+    throw new Error("This file isn't a Shelduck backup.");
   }
   const restored = sanitizePreferences(document.preferences);
   return {

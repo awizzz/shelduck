@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Nebula Terminal",
-  "version": "2.11.0",
-  "identifier": "dev.awizz.nebula-terminal",
+  "productName": "Shelduck",
+  "version": "3.0.0",
+  "identifier": "dev.awizz.shelduck",
   "build": {
     "beforeDevCommand": "node scripts/build-sidecar.mjs && npm run dev",
     "devUrl": "http://127.0.0.1:1420",
@@ -14,7 +14,7 @@
       {
         "label": "main",
         "create": false,
-        "title": "Nebula Terminal",
+        "title": "Shelduck",
         "width": 1180,
         "height": 760,
         "minWidth": 720,
@@ -43,15 +43,16 @@
       "icons/icon.ico"
     ],
     "shortDescription": "A good-looking terminal for Windows with Linux commands built in",
-    "longDescription": "Nebula Terminal runs Nebula, a Linux-style command interpreter, alongside PowerShell, Command Prompt, Git Bash and WSL, with tabs, split panes and live visual customization.",
+    "longDescription": "Shelduck comes with its own Linux-style command interpreter and also runs PowerShell, Command Prompt, Git Bash and WSL, with tabs, split panes and live visual customization.",
     "externalBin": [
-      "binaries/nebula-sh"
+      "binaries/shelduck-sh"
     ],
     "windows": {
       "nsis": {
         "installerHooks": "windows/hooks.nsh"
       },
       "wix": {
+        "upgradeCode": "9376f157-2ec5-5351-8618-b47df78869c9",
         "fragmentPaths": [
           "windows/launchers.wxs"
         ],

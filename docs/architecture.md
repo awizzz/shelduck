@@ -1,13 +1,13 @@
 # Architecture
 
-Nebula Terminal is a [Tauri 2](https://tauri.app) application. A Rust process owns the window and the pseudo-consoles. A React interface draws everything inside the window, and xterm.js renders the terminal. Nebula, the built-in command interpreter, is a separate program (`nebula-sh.exe`) that the terminal runs in a pseudo-console like any other shell.
+Shelduck is a [Tauri 2](https://tauri.app) application. A Rust process owns the window and the pseudo-consoles. A React interface draws everything inside the window, and xterm.js renders the terminal. The Shelduck shell, its built-in command interpreter, is a separate program (`shelduck-sh.exe`) that the terminal runs in a pseudo-console like any other shell.
 
 The repository is a Cargo workspace:
 
 ```text
 src/                 React interface
 src-tauri/           desktop host (Rust)
-crates/nebula-sh/    Nebula interpreter (Rust)
+crates/shelduck-sh/    The Shelduck shell (Rust)
 scripts/             sidecar build, icon font subset, preview recording, theme gallery data
 ```
 
@@ -32,25 +32,25 @@ scripts/             sidecar build, icon font subset, preview recording, theme g
 | `ssh.rs` | `Host` names from `~/.ssh/config` and the files it includes (one level deep, wildcards allowed in file names). Patterns with `*`, `?` or `!` are skipped. |
 | `custom.rs` | Custom profiles and SSH connections: validation, the JSON file they are stored in, and the commands the Profiles page uses to list, save and delete them. |
 | `files.rs` | File paths in terminal output: which of the candidates the page found exist (`find_paths`), and opening one (`open_path`) in VS Code, Cursor, the default app or the user's command. Paths resolve the Windows way (drives, Git Bash's `/c/`, WSL shares) or the Unix way, depending on the system. |
-| `integration.rs` | Shell integration for PowerShell, Git Bash, WSL, and bash and zsh on Linux: the arguments that load Nebula's script into each one, and the scripts written to disk. Zsh reads its script as `.zshenv` through `ZDOTDIR`, and the script puts the user's `ZDOTDIR` back before their own files run. |
-| `launcher.rs` | The folder a launch asks for (`nebula-terminal C:\Projects`), the File Explorer menu entries, and the `nebula-terminal` command on the user's PATH. |
+| `integration.rs` | Shell integration for PowerShell, Git Bash, WSL, and bash and zsh on Linux: the arguments that load Shelduck's script into each one, and the scripts written to disk. Zsh reads its script as `.zshenv` through `ZDOTDIR`, and the script puts the user's `ZDOTDIR` back before their own files run. |
+| `launcher.rs` | The folder a launch asks for (`shelduck C:\Projects`), the File Explorer menu entries, and the `shelduck` command on the user's PATH. |
 | `elevation.rs` | Admin windows: whether this copy runs elevated, starting an elevated copy through UAC, and building the main window, with web data of its own in an admin copy. |
 | `save.rs` | Saving a pane's output to a text file the user picks, at once or as a log that grows until it's stopped. |
 | `sync.rs` | Settings sync: the file dialog to pick the file, and reading and writing it (through a temporary file, so a sync client never uploads half of it). |
 | `tray.rs` | The notification area icon, while the quick terminal keeps the app running without a window. |
 | `quick.rs` | The quick terminal: its global shortcut, registered on a thread of its own, and the window that drops down from the top of the screen. |
-| `defterm.rs` | Nebula Terminal as the default terminal of Windows 11: the COM class Windows hands consoles to, and the registry values that choose it. |
+| `defterm.rs` | Shelduck as the default terminal of Windows 11: the COM class Windows hands consoles to, and the registry values that choose it. |
 | `cmdline.rs` | Splits an arguments line with the Windows (MSVC) rules, and quotes arguments back into a line. |
 | `pty.rs` | One ConPTY session per pane: spawn, write, resize, close. A reader thread streams output to the pane over a Tauri `Channel`, decoding UTF-8 that may be split across reads. Input and resizes go through a queue to one I/O thread per session, so they arrive in order. While a tab moves to another window, a session's events wait in a queue (4 MB at most) until the new pane attaches. |
 | `windows.rs` | Terminal windows beyond the main one: opening them, sending a tab to the window under the pointer, the transfers they open with, and which window a launch goes to. |
 | `updater.rs` | Asks GitHub for the latest release, and installs it: picks the setup.exe or MSI that matches how this copy was installed, checks it against `SHA256SUMS.txt`, runs it in passive mode and quits. An AppImage replaces itself (`$APPIMAGE`) and starts again; the .deb and .rpm only point to the download. |
-| `platform.rs` | Tells each page the platform and host name before it runs (`window.__NEBULA_PLATFORM__`, `__NEBULA_HOST__`), and on Linux turns off WebKitGTK's DMA-BUF renderer with NVIDIA's driver, which leaves the window blank otherwise. |
+| `platform.rs` | Tells each page the platform and host name before it runs (`window.__SHELDUCK_PLATFORM__`, `__SHELDUCK_HOST__`), and on Linux turns off WebKitGTK's DMA-BUF renderer with NVIDIA's driver, which leaves the window blank otherwise. |
 
 The webview cannot start arbitrary programs. It sends a **profile id**, and Rust decides which executable that means:
 
 | Id | Runs |
 | --- | --- |
-| `nebula`, `pwsh`, `powershell`, `cmd`, `gitbash`, `wsl` | The built-in shells, found on disk or on PATH. |
+| `shelduck`, `pwsh`, `powershell`, `cmd`, `gitbash`, `wsl` | The built-in shells, found on disk or on PATH. |
 | `wsl:<distribution>` | `wsl.exe -d <distribution> --cd ~`, only if that distribution is installed. |
 | `ssh:<host>` | `ssh.exe <host>`, only if the host is in your ssh config and `ssh.exe` is on PATH. |
 | `ssh-to:<target>` | `ssh.exe [-p port] [user@]host`, typed in the palette. The user and the host may only hold letters, digits, dots, dashes and underscores, and start with a letter or a digit, so nothing can pass for an ssh option. |
@@ -62,7 +62,7 @@ Detection runs on a thread of its own as soon as the app starts (`EarlyDetection
 
 ### Custom profiles
 
-Custom profiles are kept in `custom-profiles.json` in the app's config folder (`%APPDATA%\dev.awizz.nebula-terminal`). Only Rust writes that file, through a temporary file so it is never left half written. Saving checks every field: a name of up to 60 characters, a program that is either an absolute path to an existing file or a bare name found on PATH (`%VAR%` and `~` are expanded; relative paths with folders are refused), at most 64 arguments, a starting folder that exists, and a `#rrggbb` color, and up to 32 environment variables (`NAME=value`, a name of letters, digits and underscores, a value on one line), which `start_session` sets on top of the app's own. There can be 50 of them. Entries read back from the file are checked again, and a profile whose program has been uninstalled stays listed as unavailable instead of disappearing.
+Custom profiles are kept in `custom-profiles.json` in the app's config folder (`%APPDATA%\dev.awizz.shelduck`). Only Rust writes that file, through a temporary file so it is never left half written. Saving checks every field: a name of up to 60 characters, a program that is either an absolute path to an existing file or a bare name found on PATH (`%VAR%` and `~` are expanded; relative paths with folders are refused), at most 64 arguments, a starting folder that exists, and a `#rrggbb` color, and up to 32 environment variables (`NAME=value`, a name of letters, digits and underscores, a value on one line), which `start_session` sets on top of the app's own. There can be 50 of them. Entries read back from the file are checked again, and a profile whose program has been uninstalled stays listed as unavailable instead of disappearing.
 
 The editor sends the arguments as one line. Rust splits it with the Windows rules, stores the list, and the editor shows the split result as you type (`split_arguments`). Starting a custom profile uses the stored entry only; the webview never sends a program or arguments to run.
 
@@ -76,19 +76,19 @@ Two things point at the app, and `sync_launchers` adds or removes them when the 
 
 | Entry | Where |
 | --- | --- |
-| Open in Nebula Terminal | `HKCU\Software\Classes\{Directory, Directory\Background, Drive}\shell\NebulaTerminal`, running `"nebula-terminal.exe" "%V"`. Explorer writes a drive root as `C:"`, which `folder_argument` repairs. |
-| Open in Nebula Terminal (Administrator) | `…\shell\NebulaTerminalAdmin` next to it, with `HasLUAShield`, running `"nebula-terminal.exe" --open-as-administrator "%V"`. That copy writes an admin request for the folder, starts the admin copy through UAC and exits before Tauri starts, so it never opens a window or reaches the single-instance check. |
-| `nebula-terminal` command | `%LOCALAPPDATA%\dev.awizz.nebula-terminal\bin`, added to the user's PATH (`HKCU\Environment`). It holds a `.cmd` for cmd, PowerShell and Nebula, and a `sh` script for Git Bash and WSL, like npm's shims. The app's own folder isn't used because it also holds `uninstall.exe`. |
+| Open in Shelduck | `HKCU\Software\Classes\{Directory, Directory\Background, Drive}\shell\Shelduck`, running `"shelduck.exe" "%V"`. Explorer writes a drive root as `C:"`, which `folder_argument` repairs. |
+| Open in Shelduck (Administrator) | `…\shell\ShelduckAdmin` next to it, with `HasLUAShield`, running `"shelduck.exe" --open-as-administrator "%V"`. That copy writes an admin request for the folder, starts the admin copy through UAC and exits before Tauri starts, so it never opens a window or reaches the single-instance check. |
+| `shelduck` command | `%LOCALAPPDATA%\dev.awizz.shelduck\bin`, added to the user's PATH (`HKCU\Environment`). It holds a `.cmd` for cmd, PowerShell and the Shelduck shell, and a `sh` script for Git Bash and WSL, like npm's shims. The app's own folder isn't used because it also holds `uninstall.exe`. |
 
-A third one, off until the user turns it on, puts Nebula in Windows Terminal: a profile fragment in `%LOCALAPPDATA%\Microsoft\Windows Terminal\Fragments\Nebula Terminal\nebula.json`, which runs this copy's `nebula-sh.exe`. Its `guid` never changes, so what the user sets for that profile in Windows Terminal stays attached to it across updates.
+A third one, off until the user turns it on, puts Shelduck in Windows Terminal: a profile fragment in `%LOCALAPPDATA%\Microsoft\Windows Terminal\Fragments\Shelduck\shelduck.json`, which runs this copy's `shelduck-sh.exe`. Its `guid` never changes, so what the user sets for that profile in Windows Terminal stays attached to it across updates.
 
-Uninstalling runs `nebula-terminal --uninstall` before the files go (an NSIS hook in `src-tauri/windows/hooks.nsh`, a WiX custom action in `launchers.wxs`). It removes every entry and exits without opening a window. Updates don't run it.
+Uninstalling runs `shelduck --uninstall` before the files go (an NSIS hook in `src-tauri/windows/hooks.nsh`, a WiX custom action in `launchers.wxs`). It removes every entry and exits without opening a window. Updates don't run it.
 
 ### Admin windows
 
 A shell that runs as administrator never shares a window with ordinary ones. The ordinary window runs at medium integrity, so any program of the user's could type into it, and through it into the admin shell. Run as administrator (the shield next to a shell in the new-tab menu, Open as administrator on a tab, the palette) starts another copy of the app with `ShellExecuteEx` and the `runas` verb, which is what shows UAC. That copy runs elevated, and so does every shell in its window. Windows Terminal does the same.
 
-The ordinary copy writes its request (profile id, folder, and its settings, so both windows look alike) to `%LOCALAPPDATA%\dev.awizz.nebula-terminal\administrator-requests\<uuid>.json`, and passes only `--administrator <uuid>`. The admin copy reads and deletes the file, and gives it to the page as `window.__NEBULA_ADMIN__` in an initialization script, before anything renders. Nothing goes the other way: an admin copy doesn't take part in single-instance handoff, so no ordinary launch can reach it.
+The ordinary copy writes its request (profile id, folder, and its settings, so both windows look alike) to `%LOCALAPPDATA%\dev.awizz.shelduck\administrator-requests\<uuid>.json`, and passes only `--administrator <uuid>`. The admin copy reads and deletes the file, and gives it to the page as `window.__SHELDUCK_ADMIN__` in an initialization script, before anything renders. Nothing goes the other way: an admin copy doesn't take part in single-instance handoff, so no ordinary launch can reach it.
 
 | In an admin copy | |
 | --- | --- |
@@ -109,7 +109,7 @@ The main window owns the sync file. A moment after a setting changes, it writes 
 
 ### Windows on Arm
 
-The release workflow builds a second time for `aarch64-pc-windows-msvc` on the x64 runner, NSIS only (WiX 3 can't make an ARM64 MSI). `scripts/build-sidecar.mjs` builds Nebula for the target Tauri builds for (`TAURI_ENV_TARGET_TRIPLE`), and the updater picks `_arm64-setup.exe` or `_x64-setup.exe` by the architecture it was compiled for.
+The release workflow builds a second time for `aarch64-pc-windows-msvc` on the x64 runner, NSIS only (WiX 3 can't make an ARM64 MSI). `scripts/build-sidecar.mjs` builds the shell for the target Tauri builds for (`TAURI_ENV_TARGET_TRIPLE`), and the updater picks `_arm64-setup.exe` or `_x64-setup.exe` by the architecture it was compiled for.
 
 ### Linux
 
@@ -117,7 +117,7 @@ The same app builds for Linux with WebKitGTK and openpty. What only Windows has 
 
 ### Command blocks
 
-With shell integration, each command has three OSC 133 marks: its prompt (A), the start of its output (C) and its end (D). Moving the pointer over a pane finds the finished command whose lines are under it, draws a thin line along them and shows three actions. The command itself isn't marked, so it's read back from the last line before its output, without the prompt (`commandOnPromptLine` knows Nebula's, PowerShell's, cmd's and bash's).
+With shell integration, each command has three OSC 133 marks: its prompt (A), the start of its output (C) and its end (D). Moving the pointer over a pane finds the finished command whose lines are under it, draws a thin line along them and shows three actions. The command itself isn't marked, so it's read back from the last line before its output, without the prompt (`commandOnPromptLine` knows Shelduck's, PowerShell's, cmd's and bash's).
 
 ### Pane logs
 
@@ -147,9 +147,9 @@ Every `Row` and `Group` of the settings reads the search words from a context. A
 
 Restarting a pane makes a new xterm.js instance, so the old one's screen (`SerializeAddon`) is written into it before the shell starts again. An SSH profile whose `ssh` exits with 255, its code for a connection that failed or dropped, counts down 2, 5, 10, 20 and 30 seconds before the next try; a connection that held for a minute starts the count over.
 
-### Ctrl+Z in Nebula
+### Ctrl+Z in the Shelduck shell
 
-While a command runs, the console's input belongs to the program, so a Ctrl+Z key would only reach it as a character. When the pane runs Nebula and a command is between its OSC 133 C and D marks, the page doesn't send the key: it asks `suspend_foreground`, which sets `Local\NebulaTerminal.Suspend.<pid>`, an event the interactive shell creates at startup. The shell waits for each program with `WaitForMultipleObjects` on the process and that event, so nothing polls. When the event fires, it suspends the program's threads and its children's, makes them a stopped job, and the rest of the command line doesn't run. If the shell doesn't listen (another shell, an older Nebula), the key goes through as usual.
+While a command runs, the console's input belongs to the program, so a Ctrl+Z key would only reach it as a character. When the pane runs the Shelduck shell and a command is between its OSC 133 C and D marks, the page doesn't send the key: it asks `suspend_foreground`, which sets `Local\Shelduck.Suspend.<pid>`, an event the interactive shell creates at startup. The shell waits for each program with `WaitForMultipleObjects` on the process and that event, so nothing polls. When the event fires, it suspends the program's threads and its children's, makes them a stopped job, and the rest of the command line doesn't run. If the shell doesn't listen (another shell, an older Shelduck), the key goes through as usual.
 
 ### Windows
 
@@ -167,7 +167,7 @@ Each window saves its tabs, the main one in the session key and the others under
 
 ### Quick terminal
 
-The quick terminal is a second webview window, labelled `quick`, built the first time its shortcut is pressed and hidden rather than closed afterwards. It runs the same page; `window.__NEBULA_WINDOW__` tells it apart. It restores no session, and leaves the Explorer and PATH entries, update checks and the default terminal to the main window. Single-instance launches and handoffs go to the main window only (`emit_to("main", …)`), and closing the main window quits the app, quick terminal included.
+The quick terminal is a second webview window, labelled `quick`, built the first time its shortcut is pressed and hidden rather than closed afterwards. It runs the same page; `window.__SHELDUCK_WINDOW__` tells it apart. It restores no session, and leaves the Explorer and PATH entries, update checks and the default terminal to the main window. Single-instance launches and handoffs go to the main window only (`emit_to("main", …)`), and closing the main window quits the app, quick terminal included.
 
 Its shortcut names a physical key, as `KeyboardEvent.code` does, so `Win+Backquote` is the key under Escape on any layout. `quick.rs` turns it into the layout's virtual key with `MapVirtualKeyExW` and registers it with `RegisterHotKey` on a thread that does nothing else but wait for `WM_HOTKEY`. The main window registers it from the settings, and shows the error when another app owns the keys. On the shortcut, the window is placed along the top of the work area of the screen the pointer is on, shown and focused; the page slides it in, and slides it out before asking Rust to hide it.
 
@@ -175,13 +175,13 @@ Settings are shared through local storage, and each window reloads them when the
 
 ### Default terminal
 
-On Windows 11 22H2 and later, a console program that starts on its own doesn't have to get a conhost window. The console host reads `HKCU\Console\%%Startup`: `DelegationConsole` names the console server that takes over, and `DelegationTerminal` the terminal that shows it. Turning the setting on writes Windows Terminal's OpenConsole (`{2EACA947-7F5F-4CFA-BA87-8F7FBEEFBE69}`, installed with Windows 11) and Nebula's class (`{01EDD6E6-6F42-4E94-910B-C8D5B1F3231C}`), registered as a local server in `HKCU\Software\Classes\CLSID`. Turning it off sets both back to "let Windows decide", unless another terminal took over meanwhile.
+On Windows 11 22H2 and later, a console program that starts on its own doesn't have to get a conhost window. The console host reads `HKCU\Console\%%Startup`: `DelegationConsole` names the console server that takes over, and `DelegationTerminal` the terminal that shows it. Turning the setting on writes Windows Terminal's OpenConsole (`{2EACA947-7F5F-4CFA-BA87-8F7FBEEFBE69}`, installed with Windows 11) and Shelduck's class (`{01EDD6E6-6F42-4E94-910B-C8D5B1F3231C}`), registered as a local server in `HKCU\Software\Classes\CLSID`. Turning it off sets both back to "let Windows decide", unless another terminal took over meanwhile.
 
-OpenConsole creates Nebula's class over COM and calls `ITerminalHandoff3::EstablishPtyHandoff` (or `ITerminalHandoff2` with an older Windows Terminal), from microsoft/terminal's `ITerminalHandoff.idl`. The app registers the class on a thread of its own in the multithreaded apartment, so the call never waits for the UI. If the app isn't running, COM starts it with `-Embedding`, and it opens only the console's tab.
+OpenConsole creates Shelduck's class over COM and calls `ITerminalHandoff3::EstablishPtyHandoff` (or `ITerminalHandoff2` with an older Windows Terminal), from microsoft/terminal's `ITerminalHandoff.idl`. The app registers the class on a thread of its own in the multithreaded apartment, so the call never waits for the UI. If the app isn't running, COM starts it with `-Embedding`, and it opens only the console's tab.
 
 | Handle | Use |
 | --- | --- |
-| input, output | Pipes to the console: what the user types, and its VT output. Nebula creates them for version 3; version 2 passes its own. |
+| input, output | Pipes to the console: what the user types, and its VT output. Shelduck creates them for version 3; version 2 passes its own. |
 | signal | Resizes, written as ConPTY does (`PTY_SIGNAL_RESIZE_WINDOW`). Closing it ends the console. |
 | reference, server | Keep the console alive while the tab is open. |
 | client | The program: its exit closes the session with its exit code, and closing the tab terminates it. |
@@ -190,46 +190,46 @@ OpenConsole creates Nebula's class over COM and calls `ITerminalHandoff3::Establ
 
 ### Shell integration
 
-Nebula marks its prompts and commands with OSC 133 and reports its folder with OSC 7. PowerShell, Git Bash and WSL get the same marks from a script in `src-tauri/shell-integration`, unless it's turned off in Settings → Profiles:
+The Shelduck shell marks its prompts and commands with OSC 133 and reports its folder with OSC 7. PowerShell, Git Bash and WSL get the same marks from a script in `src-tauri/shell-integration`, unless it's turned off in Settings → Profiles:
 
 | Shell | How the script gets in |
 | --- | --- |
 | PowerShell 5.1 and 7 | `-NoExit -EncodedCommand <script>`, after the profile. Inline code isn't subject to the execution policy, which blocks script files on many machines. The script wraps `prompt` and PSReadLine's `PSConsoleHostReadLine`. |
-| Git Bash | `--init-file nebula.bash -i` instead of `--login -i`. Bash can't combine the two, so the script reads `/etc/profile` and the first of `~/.bash_profile`, `~/.bash_login` and `~/.profile` itself, as a login shell does. |
+| Git Bash | `--init-file shelduck.bash -i` instead of `--login -i`. Bash can't combine the two, so the script reads `/etc/profile` and the first of `~/.bash_profile`, `~/.bash_login` and `~/.profile` itself, as a login shell does. |
 | WSL | `-e sh -c <launcher>`, which finds the user's login shell. Bash gets the same script as Git Bash (through `wslpath`); any other shell starts as a login shell, without marks. |
 
-The bash script lives in `%LOCALAPPDATA%\dev.awizz.nebula-terminal\shell-integration` and is rewritten when it's missing or out of date. If it can't be written, Git Bash and WSL start without it. A prompt that already prints OSC 133 marks (oh-my-posh, for example) keeps its own.
+The bash script lives in `%LOCALAPPDATA%\dev.awizz.shelduck\shell-integration` and is rewritten when it's missing or out of date. If it can't be written, Git Bash and WSL start without it. A prompt that already prints OSC 133 marks (oh-my-posh, for example) keeps its own.
 
-## Nebula interpreter (`crates/nebula-sh/src`)
+## The Shelduck shell (`crates/shelduck-sh/src`)
 
 | File | Responsibility |
 | --- | --- |
-| `main.rs` | Entry point: interactive mode, `-c "line"`, a script file with arguments, or `nebula-sh <command> [args]` to run one of its commands directly. The interpreter runs on a thread with a large stack, so deep function recursion is safe. |
+| `main.rs` | Entry point: interactive mode, `-c "line"`, a script file with arguments, or `shelduck-sh <command> [args]` to run one of its commands directly. The interpreter runs on a thread with a large stack, so deep function recursion is safe. |
 | `parse.rs` | A recursive-descent parser: words, quotes, `$` expansions, pipelines, lists (`&` included), redirections and here-documents, assignments to arrays and elements, and the compound commands (`if`, `for`, `while`, `until`, `case`, `{ }`, `( )`, `(( ))`, `[[ ]]`, functions). |
 | `expand.rs` | Brace expansion, `~`, parameters and their `${…}` operators (on array elements too), `$(…)`, `$((…))`, `"$@"` and `"${a[@]}"`, word splitting and globs. |
 | `pathnames.rs` | Matching globs against the disk, one folder at a time: `**`, hidden files, trailing slashes and `/c/…` paths. |
 | `arith.rs` | Shell arithmetic: 64-bit integers, C operators and precedence, assignments, `++`/`--`. |
 | `test.rs` | Conditional expressions for `test`, `[` and `[[ ]]`. |
-| `exec.rs` | Runs the syntax tree: pipelines with real OS pipes, so stages stream concurrently; redirections; control flow (`break`, `continue`, `return` unwind through a flag); functions with local variables; `set -e`/`-u`/`-x`/`pipefail`; arrays, which live in the shell rather than the environment; background jobs, started in their own process group with an empty standard input; `trap`. Resolves aliases, functions, builtins, Nebula commands and PATH programs. |
+| `exec.rs` | Runs the syntax tree: pipelines with real OS pipes, so stages stream concurrently; redirections; control flow (`break`, `continue`, `return` unwind through a flag); functions with local variables; `set -e`/`-u`/`-x`/`pipefail`; arrays, which live in the shell rather than the environment; background jobs, started in their own process group with an empty standard input; `trap`. Resolves aliases, functions, builtins, Shelduck commands and PATH programs. |
 | `builtins.rs` | Commands that run inside the shell: `cd`, `export`, `alias`, `source`, `echo`, `test`, `read`, `mapfile`, `local`, `declare`, `set`, `eval`, `command`, `jobs`, `wait`, `fg`, `trap`… |
 | `complete.rs` | Tab completion: commands, paths, options read from `--help`, Git subcommands and refs, variables, SSH hosts. |
 | `coreutils.rs` | The uutils coreutils commands, dispatched by name. |
-| `extras/` | Commands Nebula implements: `ls` (icon view), `tree`, `grep`, `find`, `awk`, `ps`, `kill`, `open`, `xargs`, `less`, `imgcat` (the iTerm2 image protocol, OSC 1337); and `sed`, `diff` and `cmp` on top of the uutils libraries. |
-| `extras/awk/` | `awk`: a lexer, a recursive-descent parser for the POSIX grammar, and a tree-walking interpreter. Fields split lazily, arrays keep insertion order, `print \| cmd`, `cmd \| getline` and `system()` run through `nebula-sh -c`. |
+| `extras/` | Commands Shelduck implements: `ls` (icon view), `tree`, `grep`, `find`, `awk`, `ps`, `kill`, `open`, `xargs`, `less`, `imgcat` (the iTerm2 image protocol, OSC 1337); and `sed`, `diff` and `cmp` on top of the uutils libraries. |
+| `extras/awk/` | `awk`: a lexer, a recursive-descent parser for the POSIX grammar, and a tree-walking interpreter. Fields split lazily, arrays keep insertion order, `print \| cmd`, `cmd \| getline` and `system()` run through `shelduck-sh -c`. |
 | `suspend.rs` | Pausing programs. Windows has no signal for it: every thread of a process and of the ones it started is suspended (Toolhelp snapshots), and Ctrl+Z arrives as an event named after the shell's process, which the shell waits on next to the program it runs. On Linux the terminal sends the shell SIGUSR1, which stops the program in front with SIGSTOP; the shell ignores SIGTSTP, so its children do too and a ^Z typed into the pty can't stop the wrong process. |
 | `examples.txt` | The examples `help <command>` shows, built into the binary. |
 | `editor.rs` | reedline setup: highlighting, history hints, multi-line input, history expansion, window title, and the OSC 133 marks around each command. |
 | `fuzzy.rs` | Fuzzy matching for `Ctrl+R`: substrings first, then letters in order, with bonuses for word starts and runs. |
 | `frecency.rs` | The folders `z` knows, ranked by visits and age as rupa's z does, in `dirs.txt`. |
-| `prompt.rs` | The prompt line: folder, Git status (with a 300 ms budget), duration and exit code by default, and the segments, colors and symbol set in `~/.nebularc`. Toolchain versions are asked once per session; `NEBULA_PROMPT=starship` runs `starship prompt` instead. |
+| `prompt.rs` | The prompt line: folder, Git status (with a 300 ms budget), duration and exit code by default, and the segments, colors and symbol set in `~/.shelduckrc`. Toolchain versions are asked once per session; `SHELDUCK_PROMPT=starship` runs `starship prompt` instead. |
 | `suggest.rs` | "command not found" with the Linux equivalent of a Windows command, the winget package of a common tool, or a close match. |
 | `sys.rs` | Paths (`/c/…`, `/dev/null`, `~`), PATH lookup with PATHEXT, terminal capabilities. |
 
-Every command except the builtins runs as its own process, `nebula-sh <name> …`, the same way coreutils' multi-call binary works. This keeps pipes and redirections uniform: a pipeline of Nebula commands and Windows programs is just a chain of processes.
+Every command except the builtins runs as its own process, `shelduck-sh <name> …`, the same way coreutils' multi-call binary works. This keeps pipes and redirections uniform: a pipeline of Shelduck commands and Windows programs is just a chain of processes.
 
-Shell variables are environment variables, so every child process sees them. Functions, aliases and blocks can't run concurrently inside one process, so when they appear in a pipeline (`myfunc | grep x`) or in `( … )`, Nebula writes the function and alias definitions, the options and the arguments to a temporary script and runs it in a child `nebula-sh --subshell`. `$(…)` runs in the shell itself, then puts back the directory, variables and functions it found, as a sub-shell would.
+Shell variables are environment variables, so every child process sees them. Functions, aliases and blocks can't run concurrently inside one process, so when they appear in a pipeline (`myfunc | grep x`) or in `( … )`, Shelduck writes the function and alias definitions, the options and the arguments to a temporary script and runs it in a child `shelduck-sh --subshell`. `$(…)` runs in the shell itself, then puts back the directory, variables and functions it found, as a sub-shell would.
 
-The terminal finds the interpreter next to its own executable. `scripts/build-sidecar.mjs` builds it and stages it as a Tauri sidecar (`src-tauri/binaries/nebula-sh-<target>.exe`), which the installers then place beside `Nebula Terminal.exe`.
+The terminal finds the interpreter next to its own executable. `scripts/build-sidecar.mjs` builds it and stages it as a Tauri sidecar (`src-tauri/binaries/shelduck-sh-<target>.exe`), which the installers then place beside `Shelduck.exe`.
 
 ## Frontend (`src`)
 
@@ -275,16 +275,16 @@ The terminal finds the interpreter next to its own executable. `scripts/build-si
 | `updates.ts` | Update checks: when to check, which version was put off. |
 | `platform.ts` | Which system the app runs on, this machine's name, what its file manager is called, and the Windows build number for xterm's ConPTY handling. |
 | `paneRegistry.ts` | Lets menus and the palette reach the focused pane (copy, paste, clear…), and broadcast input write to the other panes of a tab. |
-| `preview-session.ts` | Real Nebula output replayed by the browser preview (`scripts/record-preview.py`). |
+| `preview-session.ts` | Real shell output replayed by the browser preview (`scripts/record-preview.py`). |
 | `splash.ts` | The loading screen: lights the dots of the mark at each step of the start, and removes the screen once the first shell has drawn its prompt (or after 3 seconds of a shell printing nothing). |
 
-The icon glyphs that `ls`, `tree` and the prompt print come from `assets/fonts/nebula-symbols.woff2`, a subset of the Nerd Fonts symbols built by `scripts/subset-icons.py`. It's added as a fallback after the user's terminal font and loaded before the first terminal renders.
+The icon glyphs that `ls`, `tree` and the prompt print come from `assets/fonts/shelduck-symbols.woff2`, a subset of the Nerd Fonts symbols built by `scripts/subset-icons.py`. It's added as a fallback after the user's terminal font and loaded before the first terminal renders.
 
 Terminal output never goes through React state. It is written straight into xterm, so a busy shell doesn't re-render the UI.
 
 ### Starting up
 
-The loading screen is plain HTML in `index.html`, styled by `public/splash.css`, so it's drawn before the app's script has loaded. `public/boot.js` runs first and gives it the colors of the last session, which the app saves on every theme change (`nebula-terminal.boot.v1`). `splash.ts` then moves it along: the interface is running, the shells are being found, the first shell is starting, and its prompt is on screen. Nothing is timed; the screen only waits for real work.
+The loading screen is plain HTML in `index.html`, styled by `public/splash.css`, so it's drawn before the app's script has loaded. `public/boot.js` runs first and gives it the colors of the last session, which the app saves on every theme change (`shelduck.boot.v1`). `splash.ts` then moves it along: the interface is running, the shells are being found, the first shell is starting, and its prompt is on screen. Nothing is timed; the screen only waits for real work.
 
 The screen's styles live in a file because Tauri gives every `<style>` element of the page a CSP nonce. With a nonce in `style-src`, browsers ignore `'unsafe-inline'`, and the styles xterm.js adds at run time would be blocked.
 
@@ -302,7 +302,7 @@ Splitting a pane in the direction of its parent adds a sibling instead of nestin
 
 ### Saved data
 
-Settings and the tab layout are stored in the webview's local storage under the `nebula-terminal.*` keys, and the panes' last screens in its IndexedDB (`nebula-terminal.screens`). Custom profiles are the exception: they live in a file that only Rust writes (see above), because they decide what runs. Everything read back from storage, or from an imported theme file, goes through validation first (`sanitizePreferences`, `loadSession`). Theme files only carry visual settings, never paths or shortcuts.
+Settings and the tab layout are stored in the webview's local storage under the `shelduck.*` keys, and the panes' last screens in its IndexedDB (`shelduck.screens`). Custom profiles are the exception: they live in a file that only Rust writes (see above), because they decide what runs. Everything read back from storage, or from an imported theme file, goes through validation first (`sanitizePreferences`, `loadSession`). Theme files only carry visual settings, never paths or shortcuts.
 
 ## Security
 

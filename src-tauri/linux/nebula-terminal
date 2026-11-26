@@ -1,0 +1,3 @@
+#!/bin/sh
+# The app was Nebula Terminal before 3.0. Its command still opens it.
+exec /usr/bin/shelduck "$@"

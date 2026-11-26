@@ -10,7 +10,7 @@ describe("quoteDroppedPath", () => {
   const nasty = "C:\\Downloads\\a$(calc)`id`'s.txt";
 
   it("keeps command substitutions literal in every shell", () => {
-    expect(quoteDroppedPath(nasty, profile("nebula"))).toBe("'C:\\Downloads\\a$(calc)`id`'\\''s.txt'");
+    expect(quoteDroppedPath(nasty, profile("shelduck"))).toBe("'C:\\Downloads\\a$(calc)`id`'\\''s.txt'");
     expect(quoteDroppedPath(nasty, profile("pwsh"))).toBe("'C:\\Downloads\\a$(calc)`id`''s.txt'");
     expect(quoteDroppedPath(nasty, profile("gitbash"))).toBe("'C:\\Downloads\\a$(calc)`id`'\\''s.txt'");
     expect(quoteDroppedPath("C:\\My Files\\x.txt", profile("cmd"))).toBe("\"C:\\My Files\\x.txt\"");

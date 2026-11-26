@@ -254,7 +254,7 @@ mod tests {
     fn script(name: &str, body: &str) -> std::path::PathBuf {
         use std::os::unix::fs::PermissionsExt;
         let directory =
-            std::env::temp_dir().join(format!("nebula-wsl-{name}-{}", std::process::id()));
+            std::env::temp_dir().join(format!("shelduck-wsl-{name}-{}", std::process::id()));
         std::fs::create_dir_all(&directory).unwrap();
         let path = directory.join("wsl");
         std::fs::write(&path, format!("#!/bin/sh\n{body}\n")).unwrap();

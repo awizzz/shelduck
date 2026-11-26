@@ -48,7 +48,7 @@ pub async fn choose_sync_file(app: AppHandle, window: WebviewWindow) -> Option<S
             .set_parent(&window)
             .set_title("Sync settings with a file")
             .add_filter("Settings", &["json"])
-            .set_file_name("nebula-terminal-settings.json")
+            .set_file_name("shelduck-settings.json")
             .set_can_create_directories(true)
             .blocking_save_file()
     })
@@ -107,7 +107,7 @@ mod tests {
 
     #[test]
     fn reads_and_writes_only_json_files() {
-        let folder = std::env::temp_dir().join(format!("nebula-sync-{}", std::process::id()));
+        let folder = std::env::temp_dir().join(format!("shelduck-sync-{}", std::process::id()));
         fs::create_dir_all(&folder).unwrap();
         let file = folder.join("settings.json");
         let path = file.display().to_string();

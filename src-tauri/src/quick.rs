@@ -182,7 +182,7 @@ pub fn toggle(app: &AppHandle) {
         }
         None => {
             let built = WebviewWindowBuilder::new(app, LABEL, WebviewUrl::App("index.html".into()))
-                .title("Nebula Terminal")
+                .title("Shelduck")
                 .decorations(false)
                 .transparent(true)
                 .shadow(false)
@@ -191,7 +191,7 @@ pub fn toggle(app: &AppHandle) {
                 .resizable(false)
                 .visible(false)
                 .initialization_script(crate::platform::page_script())
-                .initialization_script("window.__NEBULA_WINDOW__ = 'quick';")
+                .initialization_script("window.__SHELDUCK_WINDOW__ = 'quick';")
                 .build();
             if let Ok(window) = built {
                 place(app, &window);

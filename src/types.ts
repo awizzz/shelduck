@@ -3,10 +3,10 @@ import type { LayoutNode } from "./layout";
 
 export type FileOpener = "auto" | "vscode" | "cursor" | "default" | "custom";
 
-export type ProfileKind = "nebula" | "pwsh" | "powershell" | "cmd" | "gitbash" | "wsl" | "bash" | "zsh" | "fish" | "ssh" | "custom";
+export type ProfileKind = "shelduck" | "pwsh" | "powershell" | "cmd" | "gitbash" | "wsl" | "bash" | "zsh" | "fish" | "ssh" | "custom";
 
 /**
- * Something a tab can open. Ids are `nebula`, `pwsh`… for the built-in shells,
+ * Something a tab can open. Ids are `shelduck`, `pwsh`… for the built-in shells,
  * `wsl:<distribution>`, `ssh:<host>` and `custom:<uuid>` for the others.
  */
 export interface TerminalProfile {
@@ -172,11 +172,11 @@ export interface AppearancePreferences {
   restoreScreens: boolean;
   /** An SSH connection that drops (ssh exits with 255) starts again after a countdown. */
   reconnectSsh: boolean;
-  /** "Open in Nebula Terminal" in File Explorer. Null until the user decides: installed copies add it. */
+  /** "Open in Shelduck" in File Explorer. Null until the user decides: installed copies add it. */
   explorerMenu: boolean | null;
-  /** The `nebula-terminal` command on the user's PATH. Null until the user decides, like `explorerMenu`. */
+  /** The `shelduck` command on the user's PATH. Null until the user decides, like `explorerMenu`. */
   pathCommand: boolean | null;
-  /** Nebula in Windows Terminal's profiles. Null until the user decides: then it's off. */
+  /** Shelduck in Windows Terminal's profiles. Null until the user decides: then it's off. */
   windowsTerminalProfile: boolean | null;
   copyOnSelect: boolean;
   /** Where a double-click stops selecting a word. */
@@ -251,7 +251,7 @@ export interface TerminalPaneModel {
   moved?: MovedPane;
   /** The last folder the shell reported, or the one the pane should start in. */
   cwd?: string;
-  /** A console Windows handed over (Nebula as the default terminal). The pane shows it
+  /** A console Windows handed over (Shelduck as the default terminal). The pane shows it
    * instead of starting its profile, which only runs if the pane is restarted. */
   handoffId?: string;
   /** The key of the screen it showed in the last session, read before the pane mounts. */
@@ -343,7 +343,7 @@ export interface HandoffInfo {
   title: string;
 }
 
-/** Whether Nebula is the default terminal of Windows (Rust's `default_terminal`). */
+/** Whether Shelduck is the default terminal of Windows (Rust's `default_terminal`). */
 export interface DefaultTerminal {
   supported: boolean;
   enabled: boolean;

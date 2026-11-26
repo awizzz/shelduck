@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Builds src/assets/fonts/nebula-symbols.woff2 from the Nerd Fonts "Symbols Only" font.
+"""Builds src/assets/fonts/shelduck-symbols.woff2 from the Nerd Fonts "Symbols Only" font.
 
-Only the glyphs Nebula prints (collected from crates/nebula-sh/src) are kept.
+Only the glyphs Shelduck prints (collected from crates/shelduck-sh/src) are kept.
 
     pip install fonttools brotli
     python scripts/subset-icons.py path/to/SymbolsNerdFontMono-Regular.ttf
@@ -17,8 +17,8 @@ from fontTools import subset
 from fontTools.ttLib import TTFont
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-SOURCES = sorted((ROOT / "crates" / "nebula-sh" / "src").rglob("*.rs"))
-OUTPUT = ROOT / "src" / "assets" / "fonts" / "nebula-symbols.woff2"
+SOURCES = sorted((ROOT / "crates" / "shelduck-sh" / "src").rglob("*.rs"))
+OUTPUT = ROOT / "src" / "assets" / "fonts" / "shelduck-symbols.woff2"
 
 
 def main() -> None:

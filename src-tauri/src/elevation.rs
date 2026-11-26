@@ -18,7 +18,7 @@ use tauri::{AppHandle, Manager, WebviewWindow, WebviewWindowBuilder};
 /// Starts an admin copy: `--administrator <request id>`.
 pub const FLAG: &str = "--administrator";
 
-/// File Explorer's "Open in Nebula Terminal (Administrator)": `--open-as-administrator <folder>`.
+/// File Explorer's "Open in Shelduck (Administrator)": `--open-as-administrator <folder>`.
 pub const EXPLORER_FLAG: &str = "--open-as-administrator";
 
 /// What the command answers when the user says no to UAC.
@@ -148,7 +148,7 @@ fn remove_stale(dir: &Path) {
 }
 
 /// Builds the main window. An admin copy gets its own web data, a title that says
-/// what it is, and its request, which the page reads as `window.__NEBULA_ADMIN__`.
+/// what it is, and its request, which the page reads as `window.__SHELDUCK_ADMIN__`.
 pub fn create_window(app: &tauri::App, administrator: bool) -> tauri::Result<()> {
     let Some(config) = app
         .config()
@@ -166,8 +166,8 @@ pub fn create_window(app: &tauri::App, administrator: bool) -> tauri::Result<()>
         let request = take_request(app.handle(), &args).unwrap_or_default();
         let request = serde_json::to_string(&request).unwrap_or_else(|_| "{}".to_owned());
         builder = builder
-            .title("Administrator: Nebula Terminal")
-            .initialization_script(format!("window.__NEBULA_ADMIN__ = {request};"));
+            .title("Administrator: Shelduck")
+            .initialization_script(format!("window.__SHELDUCK_ADMIN__ = {request};"));
         if let Some(dir) = admin_data_dir(app.handle()) {
             builder = builder.data_directory(dir);
         }

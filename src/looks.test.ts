@@ -36,6 +36,10 @@ describe("profile looks", () => {
     expect(Object.getPrototypeOf(looks)).toBe(Object.prototype);
   });
 
+  it("keeps the look given to the built-in shell under its former id", () => {
+    expect(sanitizeLooks({ nebula: { fontSize: 15 } }, [])).toEqual({ shelduck: { fontSize: 15 } });
+  });
+
   it("follow Windows' contrast themes, over profile looks", () => {
     const look = windowLook(preferences, false, "dark");
     expect(look.themeId).toBe("high-contrast-dark");

@@ -1,6 +1,6 @@
 import { isStartableFolder } from "./folders";
 import { MAX_PANES, layoutFromFlat, paneIds, paneLeaf, sanitizeLayout, type LayoutNode } from "./layout";
-import { pickProfile, sshTarget, sshTargetProfile } from "./profiles";
+import { currentProfileId, pickProfile, sshTarget, sshTargetProfile } from "./profiles";
 
 /** A tab connected to a server typed in the palette comes back connected to it. */
 function palettedSsh(profileId: string) {
@@ -10,8 +10,8 @@ function palettedSsh(profileId: string) {
 import { isTabColor } from "./themes";
 import type { PersistedLayout, PersistedTab, SessionSnapshot, TerminalPaneModel, TerminalProfile, TerminalTab } from "./types";
 
-const STORAGE_KEY = "nebula-terminal.session.v3";
-const LEGACY_STORAGE_KEYS = ["nebula-terminal.session.v2", "nebula-terminal.session.v1"];
+const STORAGE_KEY = "shelduck.session.v3";
+const LEGACY_STORAGE_KEYS = ["shelduck.session.v2", "shelduck.session.v1"];
 const MAX_TABS = 20;
 const MAX_TITLE = 120;
 const MAX_COMMAND = 2_000;
@@ -84,7 +84,7 @@ function restoreTab(saved: PersistedTab, available: ReadonlyMap<string, Terminal
   const addPane = (profileId: unknown, cwd?: unknown, screen?: unknown, command?: unknown) => {
     const pane: TerminalPaneModel = {
       id: crypto.randomUUID(),
-      profile: (typeof profileId === "string" && (available.get(profileId) ?? palettedSsh(profileId))) || fallback,
+      profile: (typeof profileId === "string" && (available.get(currentProfileId(profileId)) ?? palettedSsh(profileId))) || fallback,
       cwd: isStartableFolder(cwd) ? cwd : undefined,
       ...(typeof screen === "string" && screen.length <= 200 ? { restoreScreen: screen } : {}),
       ...(typeof command === "string" && command.trim() && command.length <= MAX_COMMAND ? { startCommand: command } : {}),
@@ -162,7 +162,7 @@ export function clearSession(): void {
   for (const key of LEGACY_STORAGE_KEYS) localStorage.removeItem(key);
 }
 
-const WINDOWS_KEY = "nebula-terminal.windows.v1";
+const WINDOWS_KEY = "shelduck.windows.v1";
 const MAX_WINDOWS = 8;
 
 type SavedWindows = Record<string, { savedAt: number; snapshot: SessionSnapshot }>;

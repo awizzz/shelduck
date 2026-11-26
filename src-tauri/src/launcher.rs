@@ -1,5 +1,5 @@
-//! The ways Windows starts the app in a folder: "Open in Nebula Terminal" in File
-//! Explorer, the `nebula-terminal` command, and the folder argument they both pass.
+//! The ways Windows starts the app in a folder: "Open in Shelduck" in File
+//! Explorer, the `shelduck` command, and the folder argument they both pass.
 
 use crate::updater::{install_kind, InstallKind};
 use serde::Serialize;
@@ -42,14 +42,22 @@ pub fn launch_folder(app: tauri::AppHandle) -> Option<String> {
 /// The app's local data folder, as Tauri names it, for code that runs before Tauri does.
 pub fn local_data_dir() -> Option<PathBuf> {
     let local = env::var_os("LOCALAPPDATA")?;
-    Some(PathBuf::from(local).join("dev.awizz.nebula-terminal"))
+    Some(PathBuf::from(local).join(crate::former::IDENTIFIER))
 }
 
-/// Where the `nebula-terminal` command lives. It gets a folder of its own because the
+/// Where the `shelduck` command lives. It gets a folder of its own because the
 /// app's folder also holds `uninstall.exe`, which must never be a command.
 fn command_directory() -> Option<PathBuf> {
     local_data_dir().map(|dir| dir.join("bin"))
 }
+
+/// Where File Explorer shows the entries: on a folder, inside one, and on a drive.
+#[cfg_attr(not(windows), allow(dead_code))]
+const MENU_CLASSES: [&str; 3] = [
+    r"Software\Classes\Directory",
+    r"Software\Classes\Directory\Background",
+    r"Software\Classes\Drive",
+];
 
 /// One entry of the File Explorer menu.
 #[cfg_attr(not(windows), allow(dead_code))]
@@ -61,29 +69,24 @@ struct MenuEntry {
     elevated: bool,
 }
 
-/// "Open in Nebula Terminal" and its administrator twin, on a folder, the empty space
+/// "Open in Shelduck" and its administrator twin, on a folder, the empty space
 /// inside a folder, and a drive. The installers remove the same keys on uninstall.
 #[cfg_attr(not(windows), allow(dead_code))]
 fn menu_entries(exe: &Path) -> Vec<MenuEntry> {
-    const CLASSES: [&str; 3] = [
-        r"Software\Classes\Directory",
-        r"Software\Classes\Directory\Background",
-        r"Software\Classes\Drive",
-    ];
     let exe = exe.display();
-    CLASSES
+    MENU_CLASSES
         .iter()
         .flat_map(|class| {
             [
                 MenuEntry {
-                    key: format!(r"{class}\shell\NebulaTerminal"),
-                    label: "Open in Nebula Terminal",
+                    key: format!(r"{class}\shell\Shelduck"),
+                    label: "Open in Shelduck",
                     command: format!("\"{exe}\" \"%V\""),
                     elevated: false,
                 },
                 MenuEntry {
-                    key: format!(r"{class}\shell\NebulaTerminalAdmin"),
-                    label: "Open in Nebula Terminal (Administrator)",
+                    key: format!(r"{class}\shell\ShelduckAdmin"),
+                    label: "Open in Shelduck (Administrator)",
                     command: format!("\"{exe}\" {} \"%V\"", crate::elevation::EXPLORER_FLAG),
                     elevated: true,
                 },
@@ -92,10 +95,10 @@ fn menu_entries(exe: &Path) -> Vec<MenuEntry> {
         .collect()
 }
 
-/// For cmd, PowerShell and Nebula. `start` returns at once instead of waiting for the app.
+/// For cmd, PowerShell and Shelduck. `start` returns at once instead of waiting for the app.
 fn cmd_shim(exe: &Path) -> String {
     let exe = exe.display().to_string().replace('%', "%%");
-    format!("@echo off\r\nrem Opens a Nebula Terminal tab, in the folder given if there is one.\r\nstart \"\" \"{exe}\" %*\r\n")
+    format!("@echo off\r\nrem Opens a Shelduck tab, in the folder given if there is one.\r\nstart \"\" \"{exe}\" %*\r\n")
 }
 
 /// For Git Bash and WSL, which don't look at `.cmd` files. Same layout as npm's shims.
@@ -103,7 +106,7 @@ fn sh_shim(exe: &Path) -> String {
     let exe = exe.display().to_string().replace('\'', r"'\''");
     format!(
         r#"#!/bin/sh
-# Opens a Nebula Terminal tab, in the folder given if there is one.
+# Opens a Shelduck tab, in the folder given if there is one.
 exe='{exe}'
 if command -v wslpath >/dev/null 2>&1; then convert=wslpath; else convert=cygpath; fi
 if [ $# -gt 0 ]; then
@@ -134,7 +137,10 @@ pub fn sync_launchers(
 ) -> Result<Launchers, String> {
     let installed = install_kind() != InstallKind::Manual;
     let exe = env::current_exe().map_err(|error| error.to_string())?;
-    let fragment = windows_terminal_fragment().ok_or("LOCALAPPDATA is not set.")?;
+    let local = env::var_os("LOCALAPPDATA").ok_or("LOCALAPPDATA is not set.")?;
+    // First, so a Windows Terminal profile handed over counts as there below.
+    retire_former_launchers(Path::new(&local), &exe);
+    let fragment = windows_terminal_fragment(Path::new(&local));
     let launchers = Launchers {
         explorer_menu: explorer_menu.unwrap_or(installed),
         command: command.unwrap_or(installed),
@@ -150,34 +156,76 @@ pub fn sync_launchers(
     if command.is_some() || installed {
         let directory = command_directory().ok_or("LOCALAPPDATA is not set.")?;
         sync_command(&directory, &exe, launchers.command)
-            .map_err(|error| format!("Could not update the nebula-terminal command: {error}"))?;
+            .map_err(|error| format!("Could not update the shelduck command: {error}"))?;
     }
     Ok(launchers)
 }
 
-/// The Nebula profile of Windows Terminal, as a fragment it reads at startup:
-/// `%LOCALAPPDATA%\Microsoft\Windows Terminal\Fragments\Nebula Terminal\nebula.json`.
-fn windows_terminal_fragment() -> Option<PathBuf> {
-    let local = env::var_os("LOCALAPPDATA")?;
-    Some(
-        PathBuf::from(local)
-            .join("Microsoft")
-            .join("Windows Terminal")
-            .join("Fragments")
-            .join("Nebula Terminal")
-            .join("nebula.json"),
-    )
+/// A file Windows Terminal reads profiles from at startup, each app in its own folder
+/// of `%LOCALAPPDATA%\Microsoft\Windows Terminal\Fragments`.
+fn fragment(local: &Path, app: &str, file: &str) -> PathBuf {
+    local
+        .join("Microsoft")
+        .join("Windows Terminal")
+        .join("Fragments")
+        .join(app)
+        .join(file)
+}
+
+/// The Shelduck profile of Windows Terminal.
+fn windows_terminal_fragment(local: &Path) -> PathBuf {
+    fragment(local, "Shelduck", "shelduck.json")
+}
+
+/// The command's name before 3.0, kept next to `shelduck` for the scripts that call it.
+const FORMER_COMMAND: &str = "nebula-terminal";
+
+/// Whether the app a launcher starts is gone. One that names no app counts as gone.
+fn gone(exe: Option<&str>) -> bool {
+    !exe.is_some_and(|exe| Path::new(exe).is_file())
+}
+
+/// The app a `.cmd` shim starts (see `cmd_shim`).
+fn shim_target(shim: &str) -> Option<String> {
+    let line = shim.lines().find(|line| line.starts_with("start "))?;
+    Some(line.split('"').nth(3)?.replace("%%", "%"))
+}
+
+/// Before 3.0 the app was Nebula Terminal, and added its own Explorer entries, command
+/// and Windows Terminal profile. Updating removes that app but not these, which then
+/// start nothing: they are removed, and the profile is handed over to Shelduck. While
+/// that app is still installed they are its own, and stay.
+fn retire_former_launchers(local: &Path, exe: &Path) {
+    system::remove_former_menu();
+
+    let commands = local.join(crate::former::FORMER_IDENTIFIER).join("bin");
+    let shim = std::fs::read_to_string(commands.join(format!("{FORMER_COMMAND}.cmd")));
+    if commands.is_dir() && gone(shim.ok().as_deref().and_then(shim_target).as_deref()) {
+        let _ = std::fs::remove_dir_all(&commands);
+        let _ = system::sync_user_path(&commands, false);
+    }
+
+    let former = fragment(local, "Nebula Terminal", "nebula.json");
+    let Ok(profile) = std::fs::read_to_string(&former) else {
+        return;
+    };
+    let profile: serde_json::Value = serde_json::from_str(&profile).unwrap_or_default();
+    if gone(profile["profiles"][0]["icon"].as_str()) {
+        // Same profile id, so Windows Terminal keeps what the user changed in it.
+        let _ = sync_windows_terminal(&windows_terminal_fragment(local), exe, true);
+        let _ = sync_windows_terminal(&former, exe, false);
+    }
 }
 
 /// Always the same profile id, so Windows Terminal keeps the user's changes to it.
 const WINDOWS_TERMINAL_PROFILE: &str = "{176d5e09-7129-5910-ae63-94207641007d}";
 
 fn windows_terminal_profile(exe: &Path) -> String {
-    let shell = exe.with_file_name("nebula-sh.exe");
+    let shell = exe.with_file_name("shelduck-sh.exe");
     let fragment = serde_json::json!({
         "profiles": [{
             "guid": WINDOWS_TERMINAL_PROFILE,
-            "name": "Nebula",
+            "name": "Shelduck",
             "commandline": format!("\"{}\"", shell.display()),
             "icon": exe.display().to_string(),
             "startingDirectory": "%USERPROFILE%",
@@ -215,8 +263,11 @@ fn sync_command(directory: &Path, exe: &Path, enabled: bool) -> std::io::Result<
 fn sync_shims(directory: &Path, exe: &Path, enabled: bool) -> std::io::Result<()> {
     if enabled {
         std::fs::create_dir_all(directory)?;
-        write_if_changed(&directory.join("nebula-terminal.cmd"), &cmd_shim(exe))?;
-        write_if_changed(&directory.join("nebula-terminal"), &sh_shim(exe))
+        for name in ["shelduck", FORMER_COMMAND] {
+            write_if_changed(&directory.join(format!("{name}.cmd")), &cmd_shim(exe))?;
+            write_if_changed(&directory.join(name), &sh_shim(exe))?;
+        }
+        Ok(())
     } else if directory.exists() {
         std::fs::remove_dir_all(directory)
     } else {
@@ -231,7 +282,7 @@ fn write_if_changed(path: &Path, content: &str) -> std::io::Result<()> {
     std::fs::write(path, content)
 }
 
-/// `nebula-terminal --uninstall`, run by the installers: removes what the app added
+/// `shelduck --uninstall`, run by the installers: removes what the app added
 /// to Windows, without starting the app.
 pub fn uninstall() {
     if let Ok(exe) = env::current_exe() {
@@ -241,8 +292,8 @@ pub fn uninstall() {
         let _ = std::fs::remove_dir_all(&directory);
         let _ = system::sync_user_path(&directory, false);
     }
-    if let (Some(fragment), Ok(exe)) = (windows_terminal_fragment(), env::current_exe()) {
-        let _ = sync_windows_terminal(&fragment, &exe, false);
+    if let (Some(local), Ok(exe)) = (env::var_os("LOCALAPPDATA"), env::current_exe()) {
+        let _ = sync_windows_terminal(&windows_terminal_fragment(Path::new(&local)), &exe, false);
     }
 }
 
@@ -307,6 +358,22 @@ mod system {
             command_key.set_value("", &entry.command)?;
         }
         Ok(())
+    }
+
+    /// Nebula Terminal's entries, once the app they start is gone.
+    pub fn remove_former_menu() {
+        let root = RegKey::predef(HKEY_CURRENT_USER);
+        for class in super::MENU_CLASSES {
+            for name in ["NebulaTerminal", "NebulaTerminalAdmin"] {
+                let key = format!(r"{class}\shell\{name}");
+                let command = root
+                    .open_subkey(format!(r"{key}\command"))
+                    .and_then(|key| key.get_value::<String, _>(""));
+                if command.is_ok_and(|command| super::gone(command.split('"').nth(1))) {
+                    let _ = root.delete_subkey_all(&key);
+                }
+            }
+        }
     }
 
     fn decode(value: &RegValue) -> String {
@@ -381,6 +448,8 @@ mod system {
         Ok(())
     }
 
+    pub fn remove_former_menu() {}
+
     pub fn sync_user_path(_folder: &Path, _present: bool) -> io::Result<()> {
         Ok(())
     }
@@ -392,7 +461,7 @@ mod tests {
     use std::fs;
 
     fn args(list: &[&str]) -> Vec<String> {
-        std::iter::once("nebula-terminal.exe")
+        std::iter::once("shelduck.exe")
             .chain(list.iter().copied())
             .map(str::to_owned)
             .collect()
@@ -400,7 +469,7 @@ mod tests {
 
     #[test]
     fn reads_the_folder_argument() {
-        let base = env::temp_dir().join(format!("nebula-launch-{}", std::process::id()));
+        let base = env::temp_dir().join(format!("shelduck-launch-{}", std::process::id()));
         fs::create_dir_all(base.join("project")).unwrap();
         let absolute = base.join("project");
 
@@ -429,21 +498,21 @@ mod tests {
 
     #[test]
     fn explorer_menu_has_an_administrator_entry_for_each_place() {
-        let exe = Path::new(r"C:\Program Files\Nebula Terminal\nebula-terminal.exe");
+        let exe = Path::new(r"C:\Program Files\Shelduck\shelduck.exe");
         let entries = menu_entries(exe);
         assert_eq!(entries.len(), 6);
         let admin: Vec<&MenuEntry> = entries.iter().filter(|entry| entry.elevated).collect();
         assert_eq!(admin.len(), 3);
         assert!(admin
             .iter()
-            .all(|entry| entry.key.ends_with(r"\shell\NebulaTerminalAdmin")));
+            .all(|entry| entry.key.ends_with(r"\shell\ShelduckAdmin")));
         assert_eq!(
             admin[0].command,
-            r#""C:\Program Files\Nebula Terminal\nebula-terminal.exe" --open-as-administrator "%V""#
+            r#""C:\Program Files\Shelduck\shelduck.exe" --open-as-administrator "%V""#
         );
         assert_eq!(
             entries[0].command,
-            r#""C:\Program Files\Nebula Terminal\nebula-terminal.exe" "%V""#
+            r#""C:\Program Files\Shelduck\shelduck.exe" "%V""#
         );
         // The flag is skipped when the folder is read back.
         let base = env::temp_dir();
@@ -453,10 +522,10 @@ mod tests {
 
     #[test]
     #[cfg(windows)]
-    fn windows_terminal_gets_a_nebula_profile() {
-        let folder = env::temp_dir().join(format!("nebula-wt-{}", std::process::id()));
-        let fragment = folder.join("Nebula Terminal").join("nebula.json");
-        let exe = Path::new(r"C:\Program Files\Nebula Terminal\Nebula Terminal.exe");
+    fn windows_terminal_gets_a_shelduck_profile() {
+        let folder = env::temp_dir().join(format!("shelduck-wt-{}", std::process::id()));
+        let fragment = windows_terminal_fragment(&folder);
+        let exe = Path::new(r"C:\Program Files\Shelduck\Shelduck.exe");
         sync_windows_terminal(&fragment, exe, true).unwrap();
         let written: serde_json::Value =
             serde_json::from_str(&fs::read_to_string(&fragment).unwrap()).unwrap();
@@ -464,7 +533,7 @@ mod tests {
         assert_eq!(profile["guid"], WINDOWS_TERMINAL_PROFILE);
         assert_eq!(
             profile["commandline"],
-            r#""C:\Program Files\Nebula Terminal\nebula-sh.exe""#
+            r#""C:\Program Files\Shelduck\shelduck-sh.exe""#
         );
         sync_windows_terminal(&fragment, exe, false).unwrap();
         assert!(!fragment.exists());
@@ -476,7 +545,7 @@ mod tests {
 
     #[test]
     fn adds_and_removes_one_path_entry() {
-        let folder = r"C:\Users\me\AppData\Local\dev.awizz.nebula-terminal\bin";
+        let folder = r"C:\Users\me\AppData\Local\dev.awizz.shelduck\bin";
         assert_eq!(edit_path("", folder, true).as_deref(), Some(folder));
         assert_eq!(
             edit_path(r"C:\tools;", folder, true),
@@ -500,27 +569,79 @@ mod tests {
 
     #[test]
     fn shims_quote_the_app_path_for_each_shell() {
-        let exe = Path::new(r"C:\Users\O'Brien 100%\Nebula Terminal\nebula-terminal.exe");
-        assert!(cmd_shim(exe).contains(
-            r#"start "" "C:\Users\O'Brien 100%%\Nebula Terminal\nebula-terminal.exe" %*"#
-        ));
-        assert!(sh_shim(exe)
-            .contains(r"exe='C:\Users\O'\''Brien 100%\Nebula Terminal\nebula-terminal.exe'"));
+        let exe = Path::new(r"C:\Users\O'Brien 100%\Shelduck\shelduck.exe");
+        assert!(
+            cmd_shim(exe).contains(r#"start "" "C:\Users\O'Brien 100%%\Shelduck\shelduck.exe" %*"#)
+        );
+        assert!(sh_shim(exe).contains(r"exe='C:\Users\O'\''Brien 100%\Shelduck\shelduck.exe'"));
         assert!(!sh_shim(exe).contains('\r'));
     }
 
     #[test]
     fn the_command_folder_holds_only_the_shims() {
-        let directory = env::temp_dir().join(format!("nebula-command-{}", std::process::id()));
-        let exe = Path::new(r"C:\Nebula Terminal\nebula-terminal.exe");
+        let directory = env::temp_dir().join(format!("shelduck-command-{}", std::process::id()));
+        let exe = Path::new(r"C:\Shelduck\shelduck.exe");
         sync_shims(&directory, exe, true).unwrap();
         let mut names: Vec<String> = fs::read_dir(&directory)
             .unwrap()
             .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
             .collect();
         names.sort();
-        assert_eq!(names, ["nebula-terminal", "nebula-terminal.cmd"]);
+        assert_eq!(
+            names,
+            [
+                "nebula-terminal",
+                "nebula-terminal.cmd",
+                "shelduck",
+                "shelduck.cmd"
+            ]
+        );
         sync_shims(&directory, exe, false).unwrap();
         assert!(!directory.exists());
+    }
+
+    #[test]
+    fn reads_the_app_a_shim_starts() {
+        let exe = Path::new(r"C:\Users\O'Brien 100%\Nebula Terminal\nebula-terminal.exe");
+        assert_eq!(shim_target(&cmd_shim(exe)).as_deref(), exe.to_str());
+        assert_eq!(shim_target("@echo off\r\n"), None);
+    }
+
+    /// What Nebula Terminal left in `local`, starting `app`.
+    fn former_leftovers(local: &Path, app: &Path) -> (PathBuf, PathBuf) {
+        let commands = local.join("dev.awizz.nebula-terminal").join("bin");
+        sync_shims(&commands, app, true).unwrap();
+        let profile = fragment(local, "Nebula Terminal", "nebula.json");
+        sync_windows_terminal(&profile, app, true).unwrap();
+        (commands, profile)
+    }
+
+    #[test]
+    fn takes_over_from_a_nebula_terminal_that_is_gone() {
+        let local = env::temp_dir().join(format!("shelduck-retire-{}", std::process::id()));
+        let (commands, profile) = former_leftovers(&local, &local.join("nebula-terminal.exe"));
+
+        retire_former_launchers(&local, Path::new(r"C:\Shelduck\shelduck.exe"));
+
+        assert!(!commands.exists());
+        assert!(!profile.parent().unwrap().exists());
+        assert!(windows_terminal_fragment(&local).is_file());
+        let _ = fs::remove_dir_all(local);
+    }
+
+    #[test]
+    fn leaves_a_nebula_terminal_that_is_still_installed_alone() {
+        let local = env::temp_dir().join(format!("shelduck-keep-{}", std::process::id()));
+        fs::create_dir_all(&local).unwrap();
+        let app = local.join("nebula-terminal.exe");
+        fs::write(&app, "").unwrap();
+        let (commands, profile) = former_leftovers(&local, &app);
+
+        retire_former_launchers(&local, Path::new(r"C:\Shelduck\shelduck.exe"));
+
+        assert!(commands.join("nebula-terminal.cmd").is_file());
+        assert!(profile.is_file());
+        assert!(!windows_terminal_fragment(&local).exists());
+        let _ = fs::remove_dir_all(local);
     }
 }

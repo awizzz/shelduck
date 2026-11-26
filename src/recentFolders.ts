@@ -1,6 +1,6 @@
 /** Folders the shells were in lately (OSC 7), newest first, to open a tab in again. */
 
-const STORAGE_KEY = "nebula-terminal.recent-folders.v1";
+const STORAGE_KEY = "shelduck.recent-folders.v1";
 export const MAX_RECENT_FOLDERS = 20;
 
 /** Windows paths ignore case; WSL shares don't, but the same folder rarely differs by case. */

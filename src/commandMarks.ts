@@ -23,7 +23,7 @@ export function joinLines(lines: ReadonlyArray<{ text: string; wrapped: boolean 
 }
 
 /**
- * The command typed on a prompt line, without the prompt: Nebula's `❯`, PowerShell's
+ * The command typed on a prompt line, without the prompt: Shelduck's `❯`, PowerShell's
  * `PS C:\…>`, cmd's `C:\…>` and bash's `user@host:~$`. Empty when the line holds
  * nothing but a prompt.
  */

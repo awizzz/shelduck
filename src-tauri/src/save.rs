@@ -172,8 +172,8 @@ mod tests {
     #[test]
     fn names_stay_names() {
         assert_eq!(
-            file_name("Nebula 2026-11-02", "txt"),
-            "Nebula 2026-11-02.txt"
+            file_name("Shelduck 2026-11-02", "txt"),
+            "Shelduck 2026-11-02.txt"
         );
         assert_eq!(
             file_name("..\\..\\Windows\\win.ini", "txt"),

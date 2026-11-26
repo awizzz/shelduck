@@ -15,7 +15,7 @@ use std::{
 };
 use tauri::AppHandle;
 
-const REPOSITORY: &str = "awizzz/nebula-terminal";
+const REPOSITORY: &str = "awizzz/shelduck";
 /// Installers are around 10 MB; anything far bigger is not ours.
 const MAX_DOWNLOAD: u64 = 300 * 1024 * 1024;
 
@@ -67,7 +67,7 @@ fn agent() -> ureq::Agent {
     ureq::Agent::config_builder()
         .timeout_global(Some(Duration::from_secs(120)))
         .timeout_connect(Some(Duration::from_secs(10)))
-        .user_agent(format!("NebulaTerminal/{}", env!("CARGO_PKG_VERSION")))
+        .user_agent(format!("Shelduck/{}", env!("CARGO_PKG_VERSION")))
         .tls_config(
             ureq::tls::TlsConfig::builder()
                 .root_certs(ureq::tls::RootCerts::PlatformVerifier)
@@ -158,21 +158,13 @@ fn installer_asset(release: &Release, kind: InstallKind) -> Option<&Asset> {
     })
 }
 
-/// GitHub publishes `Nebula Terminal_1.1.0.exe` as `Nebula.Terminal_1.1.0.exe`.
-fn published_name(name: &str) -> String {
-    name.replace(' ', ".")
-}
-
-/// Finds `name` in a `sha256sum`-style list (1.1.0 listed files under their names
-/// before GitHub renamed them).
+/// Finds `name` in a `sha256sum`-style list.
 fn expected_hash(sums: &str, name: &str) -> Option<String> {
     sums.lines().find_map(|line| {
         let (hash, file) = line.trim().split_once(char::is_whitespace)?;
         let file = file.trim().trim_start_matches('*');
-        (published_name(file) == published_name(name)
-            && hash.len() == 64
-            && hash.chars().all(|c| c.is_ascii_hexdigit()))
-        .then(|| hash.to_ascii_lowercase())
+        (file == name && hash.len() == 64 && hash.chars().all(|c| c.is_ascii_hexdigit()))
+            .then(|| hash.to_ascii_lowercase())
     })
 }
 
@@ -243,7 +235,7 @@ fn prepare() -> Result<(PathBuf, InstallKind), String> {
     let agent = agent();
     let release = latest_release(&agent)?;
     if newer_version(&release.tag_name, env!("CARGO_PKG_VERSION")).is_none() {
-        return Err("Nebula Terminal is already up to date.".into());
+        return Err("Shelduck is already up to date.".into());
     }
     let kind = install_kind();
     let asset = installer_asset(&release, kind)
@@ -257,7 +249,7 @@ fn prepare() -> Result<(PathBuf, InstallKind), String> {
         .find(|candidate| candidate.name == "SHA256SUMS.txt")
         .ok_or("The release has no SHA256SUMS.txt, so the update can't be verified.")?;
 
-    let directory = std::env::temp_dir().join("NebulaTerminal-update");
+    let directory = std::env::temp_dir().join("Shelduck-update");
     let _ = fs::remove_dir_all(&directory);
     fs::create_dir_all(&directory).map_err(|error| format!("Cannot save the update: {error}"))?;
     let sums_path = directory.join("SHA256SUMS.txt");
@@ -373,24 +365,19 @@ mod tests {
     #[test]
     fn reads_checksum_lists() {
         let sums = format!(
-            "{}  Nebula.Terminal_1.1.0_x64-setup.exe\n{} *Nebula.Terminal_1.1.0_x64_en-US.msi\n",
+            "{}  Shelduck_3.0.0_x64-setup.exe\n{} *Shelduck_3.0.0_x64_en-US.msi\n",
             "a".repeat(64),
             "B".repeat(64)
         );
         assert_eq!(
-            expected_hash(&sums, "Nebula.Terminal_1.1.0_x64-setup.exe"),
+            expected_hash(&sums, "Shelduck_3.0.0_x64-setup.exe"),
             Some("a".repeat(64))
         );
         assert_eq!(
-            expected_hash(&sums, "Nebula.Terminal_1.1.0_x64_en-US.msi"),
+            expected_hash(&sums, "Shelduck_3.0.0_x64_en-US.msi"),
             Some("b".repeat(64))
         );
         assert_eq!(expected_hash(&sums, "other.zip"), None);
-        let spaced = format!("{}  Nebula Terminal_1.1.0_x64-setup.exe\n", "c".repeat(64));
-        assert_eq!(
-            expected_hash(&spaced, "Nebula.Terminal_1.1.0_x64-setup.exe"),
-            Some("c".repeat(64))
-        );
         assert_eq!(expected_hash("short  file.exe", "file.exe"), None);
     }
 
@@ -402,24 +389,24 @@ mod tests {
             size: 1,
         };
         // Both architectures' files, as a release has them.
-        let setup = format!("Nebula.Terminal_2.11.0_{ARCH}-setup.exe");
-        let msi = format!("Nebula.Terminal_2.11.0_{ARCH}_en-US.msi");
-        let appimage = format!("Nebula.Terminal_2.11.0_{LINUX_ARCH}.AppImage");
+        let setup = format!("Shelduck_3.0.0_{ARCH}-setup.exe");
+        let msi = format!("Shelduck_3.0.0_{ARCH}_en-US.msi");
+        let appimage = format!("Shelduck_3.0.0_{LINUX_ARCH}.AppImage");
         let release = Release {
-            tag_name: "v2.11.0".into(),
+            tag_name: "v3.0.0".into(),
             html_url: String::new(),
             body: None,
             draft: false,
             prerelease: false,
             assets: vec![
-                asset("Nebula-Terminal-2.11.0-windows-x64-portable.zip"),
-                asset("Nebula.Terminal_2.11.0_x64-setup.exe"),
-                asset("Nebula.Terminal_2.11.0_arm64-setup.exe"),
-                asset("Nebula.Terminal_2.11.0_x64_en-US.msi"),
-                asset("Nebula.Terminal_2.11.0_amd64.deb"),
-                asset("Nebula.Terminal-2.11.0-1.x86_64.rpm"),
-                asset("Nebula.Terminal_2.11.0_amd64.AppImage"),
-                asset("Nebula.Terminal_2.11.0_aarch64.AppImage"),
+                asset("Shelduck-3.0.0-windows-x64-portable.zip"),
+                asset("Shelduck_3.0.0_x64-setup.exe"),
+                asset("Shelduck_3.0.0_arm64-setup.exe"),
+                asset("Shelduck_3.0.0_x64_en-US.msi"),
+                asset("Shelduck_3.0.0_amd64.deb"),
+                asset("Shelduck-3.0.0-1.x86_64.rpm"),
+                asset("Shelduck_3.0.0_amd64.AppImage"),
+                asset("Shelduck_3.0.0_aarch64.AppImage"),
                 asset("SHA256SUMS.txt"),
             ],
         };

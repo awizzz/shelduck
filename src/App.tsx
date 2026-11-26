@@ -253,7 +253,7 @@ export default function App() {
   renamingRef.current = renaming;
 
   /**
-   * `launch.folder` is the folder the app was started with (`nebula-terminal C:\Projects`).
+   * `launch.folder` is the folder the app was started with (`shelduck C:\Projects`).
    * A copy started for a console Windows handed over opens only that console's tab.
    */
   const hydrateWorkspace = useCallback((detected: TerminalProfile[], launch: Launch = { forHandoff: false, handoffs: [] }) => {
@@ -472,7 +472,7 @@ export default function App() {
     if (tabId !== activeTabIdRef.current) {
       setFinished((current) => new Map(current).set(tabId, command.code === null || command.code === 0));
     }
-    const { title, body } = finishedMessage(command, tab ? tabTitle(tab) : "Nebula Terminal");
+    const { title, body } = finishedMessage(command, tab ? tabTitle(tab) : "Shelduck");
     notify(title, body);
   }, [tabUnseen]);
 
@@ -485,7 +485,7 @@ export default function App() {
     if (now - (lastHighlightRef.current.get(key) ?? 0) < 30_000) return;
     lastHighlightRef.current.set(key, now);
     const tab = tabsRef.current.find((candidate) => candidate.id === tabId);
-    notify(`${highlight.text.trim()} in ${tab ? tabTitle(tab) : "Nebula Terminal"}`, line.slice(0, 200));
+    notify(`${highlight.text.trim()} in ${tab ? tabTitle(tab) : "Shelduck"}`, line.slice(0, 200));
     if (tabId !== activeTabIdRef.current) setActivity((current) => current.has(tabId) ? current : new Set([...current, tabId]));
   }, [tabUnseen]);
 
@@ -531,7 +531,7 @@ export default function App() {
     let disposed = false;
     void getCurrentWindow().onDragDropEvent((event) => {
       if (event.payload.type === "drop" && event.payload.paths.length) {
-        window.dispatchEvent(new CustomEvent("nebula:insert-paths", { detail: event.payload.paths }));
+        window.dispatchEvent(new CustomEvent("shelduck:insert-paths", { detail: event.payload.paths }));
       }
     }).then((dispose) => { if (disposed) dispose(); else unlisten = dispose; });
     return () => { disposed = true; unlisten?.(); };
@@ -617,7 +617,7 @@ export default function App() {
       .catch((error) => setNotice(String(error)));
   }, [currentFolder, nativeHost, openNewTab, resolveProfile]);
 
-  // A second launch (Explorer's "Open in Nebula Terminal") lands here as a new tab.
+  // A second launch (Explorer's "Open in Shelduck") lands here as a new tab.
   const openNewTabRef = useRef(openNewTab);
   openNewTabRef.current = openNewTab;
   useEffect(() => {
@@ -671,7 +671,7 @@ export default function App() {
     if (!tab) return;
     setTabs((current) => current.map((candidate) => candidate.id === tabId ? { ...candidate, watch: undefined } : candidate));
     const message = watch === "output" ? `${tabTitle(tab)} printed something` : `${tabTitle(tab)} has been quiet for ${SILENCE_SECONDS} s`;
-    if (tabUnseen(tabId)) notify(message, "Nebula Terminal");
+    if (tabUnseen(tabId)) notify(message, "Shelduck");
     else setNotice(message);
   }, (tabId) => !tabUnseen(tabId)));
 
@@ -864,7 +864,7 @@ export default function App() {
       }
       const document = readSyncDocument(file.contents);
       if (!document) {
-        setSyncProblem("This file isn't a Nebula Terminal settings file.");
+        setSyncProblem("This file isn't a Shelduck settings file.");
         return;
       }
       setSyncProblem(null);
@@ -1119,7 +1119,7 @@ export default function App() {
       return;
     }
     const stamp = new Date().toISOString().slice(0, 16).replace("T", " ").replace(":", "h");
-    const name = `${tab ? tabTitle(tab) : "Nebula"} ${stamp}`;
+    const name = `${tab ? tabTitle(tab) : "Shelduck"} ${stamp}`;
     const contents = what === "last" ? pane.lastOutput()! : what === "html" ? pane.html(name) : pane.text();
     void invoke<string | null>("save_text_file", { name, contents, html: what === "html" })
       .then((path) => { if (path) setNotice(`Saved to ${folderParts(path).name}`); })
@@ -1185,7 +1185,7 @@ export default function App() {
       return;
     }
     const stamp = new Date().toISOString().slice(0, 16).replace("T", " ").replace(":", "h");
-    pane.startLog(`${tab ? tabTitle(tab) : "Nebula"} ${stamp}`);
+    pane.startLog(`${tab ? tabTitle(tab) : "Shelduck"} ${stamp}`);
   }, [nativeHost]);
 
   const markActivity = useCallback((tabId: string) => {
@@ -1893,8 +1893,8 @@ export default function App() {
           <div className="empty-state">
             <h2>No shell found</h2>
             <p>{isWindows
-              ? "Nebula Terminal looks for PowerShell, Command Prompt, Git Bash and WSL. None of them could be found on this PC."
-              : "Nebula Terminal looks for bash, zsh, fish and PowerShell. None of them could be found on this computer."}</p>
+              ? "Shelduck looks for PowerShell, Command Prompt, Git Bash and WSL. None of them could be found on this PC."
+              : "Shelduck looks for bash, zsh, fish and PowerShell. None of them could be found on this computer."}</p>
           </div>
         )}
 

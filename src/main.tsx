@@ -12,7 +12,7 @@ advance("interface", "Loading the interface");
 // a letter drawn in a fallback font would stay that way. Never wait more than a moment.
 const PLEX_SUBSETS = "a\u0101\u044f\u0463\u1ec7";
 const fonts = Promise.all([
-  document.fonts.load('16px "Nebula Symbols"', "\uf07b"),
+  document.fonts.load('16px "Shelduck Symbols"', "\uf07b"),
   document.fonts.load('16px "IBM Plex Mono"', PLEX_SUBSETS),
   document.fonts.load('bold 16px "IBM Plex Mono"', PLEX_SUBSETS),
 ]).catch(() => undefined);

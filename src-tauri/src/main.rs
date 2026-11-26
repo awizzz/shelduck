@@ -5,6 +5,7 @@ mod custom;
 mod defterm;
 mod elevation;
 mod files;
+mod former;
 mod integration;
 mod launcher;
 mod platform;
@@ -56,7 +57,7 @@ fn windows_build() -> Option<u32> {
     None
 }
 
-/// A second launch (Explorer's "Open in Nebula Terminal", or the app started again)
+/// A second launch (Explorer's "Open in Shelduck", or the app started again)
 /// opens a tab in this window instead of a second copy of the app.
 fn open_from_second_launch(app: &AppHandle, args: Vec<String>, cwd: String) {
     // Only the notification area icon left: the launch gets a window of its own.
@@ -97,6 +98,7 @@ fn main() {
         defterm::uninstall();
         return;
     }
+    former::adopt_settings();
     // Before the single-instance check, which would hand this launch to an open window.
     if std::env::args().nth(1).as_deref() == Some(elevation::EXPLORER_FLAG) {
         let args: Vec<String> = std::env::args().collect();
@@ -203,5 +205,5 @@ fn main() {
             windows::terminal_window_count,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running Nebula Terminal");
+        .expect("error while running Shelduck");
 }

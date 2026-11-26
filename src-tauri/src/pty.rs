@@ -188,7 +188,7 @@ impl PtyEvent {
 }
 
 /// The console behind a session, which takes its resizes: the pseudo-console the app
-/// created, or one Windows handed over when Nebula is the default terminal.
+/// created, or one Windows handed over when Shelduck is the default terminal.
 pub trait Console: Send {
     fn resize(&mut self, size: PtySize) -> io::Result<()>;
 }
@@ -207,7 +207,7 @@ pub struct SessionParts {
     pub killer: Box<dyn ChildKiller + Send + Sync>,
     /// Blocks until the program exits, then gives its exit code.
     pub wait: Box<dyn FnOnce() -> io::Result<u32> + Send>,
-    /// The shell's process, for Ctrl+Z in Nebula; None for a console Windows handed over.
+    /// The shell's process, for Ctrl+Z in Shelduck; None for a console Windows handed over.
     pub pid: Option<u32>,
 }
 
@@ -352,8 +352,10 @@ pub async fn start_session(
     }
     command.env("TERM", "xterm-256color");
     command.env("COLORTERM", "truecolor");
-    command.env("TERM_PROGRAM", "NebulaTerminal");
+    command.env("TERM_PROGRAM", "Shelduck");
     command.env("TERM_PROGRAM_VERSION", env!("CARGO_PKG_VERSION"));
+    command.env("SHELDUCK_TERMINAL", "1");
+    // The name before 3.0, which prompts and scripts written back then still test.
     command.env("NEBULA_TERMINAL", "1");
     for (name, value) in integration {
         command.env(name, value);
@@ -384,10 +386,10 @@ pub async fn start_session(
         .take_writer()
         .map_err(|error| format!("Unable to open PTY input: {error}"))?;
     let killer = child.clone_killer();
-    // Only Nebula listens for the pause request; elsewhere SIGUSR1 would end the shell.
+    // Only Shelduck listens for the pause request; elsewhere SIGUSR1 would end the shell.
     let pid = child
         .process_id()
-        .filter(|_| cfg!(windows) || profile_id == "nebula");
+        .filter(|_| cfg!(windows) || profile_id == "shelduck");
     let parts = SessionParts {
         reader,
         writer,
@@ -577,8 +579,8 @@ pub fn attach_handoff(
     Ok(session_id)
 }
 
-/// Ctrl+Z for a Nebula shell: sets the event it waits on next to the program in front
-/// (crates/nebula-sh/src/suspend.rs), which pauses that program. False when the shell
+/// Ctrl+Z for a Shelduck shell: sets the event it waits on next to the program in front
+/// (crates/shelduck-sh/src/suspend.rs), which pauses that program. False when the shell
 /// doesn't listen for it; the key then goes to the program as usual.
 #[tauri::command]
 pub fn suspend_foreground(session_id: String, state: State<'_, PtyState>) -> Result<bool, String> {
@@ -593,7 +595,7 @@ fn signal_suspend(pid: u32) -> bool {
         Foundation::CloseHandle,
         System::Threading::{OpenEventW, SetEvent, EVENT_MODIFY_STATE},
     };
-    let name: Vec<u16> = format!("Local\\NebulaTerminal.Suspend.{pid}\0")
+    let name: Vec<u16> = format!("Local\\Shelduck.Suspend.{pid}\0")
         .encode_utf16()
         .collect();
     // SAFETY: a NUL-terminated name, and a handle closed before returning.
@@ -608,7 +610,7 @@ fn signal_suspend(pid: u32) -> bool {
     }
 }
 
-/// Nebula sessions only (see `start_session`): the shell catches SIGUSR1.
+/// Shelduck sessions only (see `start_session`): the shell catches SIGUSR1.
 #[cfg(unix)]
 fn signal_suspend(pid: u32) -> bool {
     // SAFETY: a signal to the shell this session started.

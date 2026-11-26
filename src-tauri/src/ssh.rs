@@ -281,7 +281,7 @@ host build-box.local  nas
 
     #[test]
     fn follows_includes_one_level_deep() {
-        let home = std::env::temp_dir().join(format!("nebula-ssh-{}", std::process::id()));
+        let home = std::env::temp_dir().join(format!("shelduck-ssh-{}", std::process::id()));
         let ssh = home.join(".ssh");
         let _ = fs::remove_dir_all(&home);
         fs::create_dir_all(ssh.join("config.d")).unwrap();
