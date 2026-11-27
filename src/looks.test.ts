@@ -49,6 +49,13 @@ describe("profile looks", () => {
     expect(windowLook(preferences, true, "dark").accent).toBe(ADMIN_ACCENT);
   });
 
+  it("show nothing through a contrast theme", () => {
+    const look = windowLook({ ...preferences, backgroundMode: "image", terminalOpacity: 0.6 }, false, "dark");
+    expect([look.backgroundMode, look.terminalOpacity]).toEqual(["solid", 1]);
+    expect(windowLook({ ...preferences, backgroundMode: "mica" }, false, "light").backgroundMode).toBe("mica");
+    expect(windowLook({ ...preferences, backgroundMode: "image" }, false).backgroundMode).toBe("image");
+  });
+
   it("mark admin windows when asked", () => {
     expect(windowLook(defaultPreferences, true).accent).toBe(ADMIN_ACCENT);
     expect(windowLook(defaultPreferences, false).accent).toBe(defaultPreferences.accent);

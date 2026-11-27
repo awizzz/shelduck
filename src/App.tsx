@@ -25,6 +25,7 @@ import { blanksIn, commandInput, fillBlanks, lastBlankValues, rememberBlankValue
 import { folderParts, loadRecentFolders, rememberFolder, saveRecentFolders } from "./recentFolders";
 import { applySynced, digestOf, loadSyncState, readSyncDocument, saveSyncState, syncDocument } from "./sync";
 import { readableOn } from "./color";
+import { backgroundLayers, forgetBackgroundImage, loadBackgroundImage } from "./background";
 import { resolveTheme, tabColors, themes } from "./themes";
 import { MAX_PANES, computeLayout, dividerFor, evenLayout, findNeighbor, insertBeside, minimumExtent, nodeAt, normalizeLayout, paneIds, paneLeaf, removePane, renamePanes, resizePair, setSplitSizes, splitPane, swapPanes, type Divider, type FocusDirection, type LayoutNode, type Rect } from "./layout";
 import { matchesShortcut } from "./keys";
@@ -33,6 +34,7 @@ import { SILENCE_SECONDS, TabWatcher } from "./tabWatch";
 import { forgetScreens, pruneScreens, restoredLine, saveScreens, screenKey, withScreens } from "./screens";
 import { fileManagerName, isWindows } from "./platform";
 import ResizeEdges from "./components/ResizeEdges";
+import BackgroundImage from "./components/BackgroundImage";
 import type { PaletteCommand } from "./components/CommandPalette";
 import type { SettingsPage } from "./components/SettingsPanel";
 import type { AppearancePreferences, DefaultTerminal, HandoffInfo, Highlight, Launchers, SavedCommand, SessionSnapshot, SplitDirection, TabColor, TabWatch, TerminalPaneModel, TerminalProfile, TerminalTab } from "./types";
@@ -145,6 +147,30 @@ function useMediaQuery(query: string): boolean {
   return matches;
 }
 
+/** Where the background image is drawn from, once it's read. `onGone` hears of an image that isn't kept anymore. */
+function useBackgroundUrl(image: string | undefined, onGone: (image: string) => void): string | undefined {
+  const [read, setRead] = useState<{ image: string; url: string }>();
+  const onGoneRef = useRef(onGone);
+  onGoneRef.current = onGone;
+  useEffect(() => {
+    if (!image || image.startsWith("data:")) return;
+    let url: string | undefined;
+    let stale = false;
+    loadBackgroundImage(image).then((blob) => {
+      if (stale) return;
+      if (!blob) return onGoneRef.current(image);
+      url = URL.createObjectURL(blob);
+      setRead({ image, url });
+    }, () => undefined);
+    return () => {
+      stale = true;
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [image]);
+  if (image?.startsWith("data:")) return image;
+  return read && read.image === image ? read.url : undefined;
+}
+
 function paneStyle(rect: Rect | undefined): CSSProperties {
   if (!rect) return { display: "none" };
   return {
@@ -232,7 +258,14 @@ export default function App() {
   // and the chrome in the colors of the pane in front.
   const forcedColors = useMediaQuery("(forced-colors: active)");
   const prefersDark = useMediaQuery("(prefers-color-scheme: dark)");
-  const drawn = useMemo(() => windowLook(preferences, isAdministrator, forcedColors ? (prefersDark ? "dark" : "light") : undefined), [forcedColors, prefersDark, preferences]);
+  const backgroundUrl = useBackgroundUrl(preferences.backgroundMode === "image" ? preferences.backgroundImage : undefined, (image) => {
+    setPreferences((current) => current.backgroundImage === image ? { ...current, backgroundImage: undefined, backgroundMode: isWindows ? "mica" : "solid" } : current);
+  });
+  const drawn = useMemo(() => {
+    // An image background is a plain one until its image is read.
+    const shown: AppearancePreferences = preferences.backgroundMode === "image" && !backgroundUrl ? { ...preferences, backgroundMode: "solid" } : preferences;
+    return windowLook(shown, isAdministrator, forcedColors ? (prefersDark ? "dark" : "light") : undefined);
+  }, [backgroundUrl, forcedColors, prefersDark, preferences]);
   const lookOf = useMemo(() => {
     const cache = new Map<string, AppearancePreferences>();
     return (profileId: string | undefined) => {
@@ -246,6 +279,8 @@ export default function App() {
   const activeProfileIdRef = useRef(activePane?.profile.id);
   activeProfileIdRef.current = activePane?.profile.id;
   const theme = resolveTheme(activeLook.themeId, activeLook.customThemes);
+  // Over an image, the terminal's background thins out to let it through.
+  const surface = drawn.backgroundMode === "image" ? backgroundLayers(drawn.backgroundImageOpacity, drawn.terminalOpacity).surface : drawn.terminalOpacity;
   const overlayOpen = settingsOpen || paletteOpen || findEverywhereOpen || confirmation !== null;
   // A tab closed mid-rename takes its editor with it, so only a live tab counts.
   const renaming = renamingTabId !== null && tabs.some((tab) => tab.id === renamingTabId && !closing.has(tab.id));
@@ -319,13 +354,13 @@ export default function App() {
     root.dataset.scheme = theme.scheme;
     root.dataset.animation = preferences.animationLevel;
     root.dataset.density = preferences.tabDensity;
-    root.dataset.background = preferences.backgroundMode === "mica" && (micaFailed || !isWindows) ? "solid" : preferences.backgroundMode;
+    root.dataset.background = drawn.backgroundMode === "mica" && (micaFailed || !isWindows) ? "solid" : drawn.backgroundMode;
     root.dataset.host = nativeHost ? "native" : "browser";
     root.style.setProperty("--on-accent", readableOn(activeLook.accent));
-    root.style.setProperty("--term-surface", preferences.terminalOpacity >= 1 ? theme.background : `color-mix(in srgb, ${theme.background} ${Math.round(preferences.terminalOpacity * 100)}%, transparent)`);
+    root.style.setProperty("--term-surface", surface >= 1 ? theme.background : `color-mix(in srgb, ${theme.background} ${Math.round(surface * 100)}%, transparent)`);
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme.background);
     splash.rememberLook({ background: theme.background, foreground: theme.foreground, accent: activeLook.accent, scheme: theme.scheme, animation: preferences.animationLevel });
-  }, [activeLook.accent, micaFailed, nativeHost, preferences, theme]);
+  }, [activeLook.accent, drawn.backgroundMode, micaFailed, nativeHost, preferences, surface, theme]);
 
   // The taskbar button shows the progress of the tab in front, or of one in the background.
   const shownProgress = windowProgress(progress, activeTabId);
@@ -1766,14 +1801,13 @@ export default function App() {
     if (focused && focused !== document.body && !focused.closest(".xterm")) return;
     getPane(activePane?.id)?.focus();
   });
-  const showImage = preferences.backgroundMode === "image" && preferences.backgroundImage;
   const noShells = ready && nativeHost && !profiles.some((profile) => profile.available);
 
   const tabsOnSide = preferences.tabPosition === "side" && !isQuickTerminal;
   return (
     <main className={`app ${ready ? "is-ready" : ""} ${tabsOnSide ? "tabs-side" : ""}`} data-quick={isQuickTerminal ? quickMotion : undefined}>
       {nativeHost && !isWindows && !isQuickTerminal && <ResizeEdges />}
-      {showImage && <div className="app__image" style={{ backgroundImage: `url("${preferences.backgroundImage}")`, opacity: preferences.backgroundImageOpacity }} />}
+      {drawn.backgroundMode === "image" && backgroundUrl && <BackgroundImage url={backgroundUrl} look={drawn} />}
       <Titlebar
         tabs={tabs}
         activeTabId={activeTabId}
@@ -1937,7 +1971,12 @@ export default function App() {
           preferences={preferences}
           onChange={setPreferences}
           onClose={() => { setSettingsOpen(false); closeOverlayFocus(); }}
-          onReset={() => { setPreferences({ ...defaultPreferences, keybindings: { ...defaultKeybindings } }); setNotice("Settings reset"); }}
+          backdrop={drawn.backgroundMode === "image" && backgroundUrl ? { url: backgroundUrl, theme } : undefined}
+          onReset={() => {
+            setPreferences({ ...defaultPreferences, keybindings: { ...defaultKeybindings } });
+            void forgetBackgroundImage().catch(() => undefined);
+            setNotice("Settings reset");
+          }}
           onClearSession={() => {
             clearSession();
             void forgetScreens().catch(() => undefined);

@@ -25,6 +25,16 @@ describe("themes", () => {
     expect(colors.cursor).toBe("#123456");
   });
 
+  it("gives xterm an opaque selection color", () => {
+    // xterm would mix a see-through one with the terminal's background, which is clear over an image.
+    for (const id of ["shelduck", "shelduck-night"]) {
+      const theme = resolveTheme(id);
+      const { selectionBackground } = xtermTheme(theme, "#123456");
+      expect(selectionBackground).toMatch(/^#[0-9a-f]{6}$/);
+      expect(selectionBackground).not.toBe(theme.background);
+    }
+  });
+
   it("keeps the red cursor of the Shelduck themes whatever the accent", () => {
     for (const id of ["shelduck", "shelduck-night"]) {
       const theme = resolveTheme(id);

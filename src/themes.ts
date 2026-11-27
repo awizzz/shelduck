@@ -1,3 +1,4 @@
+import { mix } from "./color";
 import type { TabColor } from "./types";
 
 export interface TerminalTheme {
@@ -153,7 +154,11 @@ export function xtermTheme(theme: TerminalTheme, accent: string) {
     foreground: theme.foreground,
     cursor: theme.cursor ?? accent,
     cursorAccent: theme.background,
-    selectionBackground: `${accent}${theme.scheme === "light" ? "40" : "4d"}`,
+    // Mixed here, and opaque: xterm would mix it with the background it's given, which is
+    // clear on a terminal the window shows through.
+    selectionBackground: mix(accent, theme.background, theme.scheme === "light" ? 0.25 : 0.3),
+    // The scrollbar needs no line beside it, and xterm's is white.
+    overviewRulerBorder: "#00000000",
     scrollbarSliderBackground: `${theme.foreground}1f`,
     scrollbarSliderHoverBackground: `${theme.foreground}33`,
     scrollbarSliderActiveBackground: `${theme.foreground}47`,

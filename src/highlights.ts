@@ -1,4 +1,5 @@
 import type { IBufferLine, IDecoration, IDisposable, Terminal } from "@xterm/xterm";
+import { mix } from "./color";
 import type { Highlight } from "./types";
 import { tabColors } from "./themes";
 
@@ -48,12 +49,6 @@ export function findMatches(text: string, rules: readonly { pattern: RegExp }[])
   return found;
 }
 
-function mix(color: string, base: string, amount: number): string {
-  const channel = (hex: string, index: number) => parseInt(hex.slice(1 + index * 2, 3 + index * 2), 16);
-  if (!/^#[0-9a-f]{6}$/i.test(base)) return color;
-  return `#${[0, 1, 2].map((index) => Math.round(channel(color, index) * amount + channel(base, index) * (1 - amount)).toString(16).padStart(2, "0")).join("")}`;
-}
-
 /** A row's text, and the cell each character sits in (wide characters take two). */
 function rowText(line: IBufferLine, cols: number): { text: string; columns: number[] } {
   let text = "";
@@ -76,6 +71,8 @@ function rowText(line: IBufferLine, cols: number): { text: string; columns: numb
 export function startHighlights(
   terminal: Terminal,
   rules: () => readonly Highlight[],
+  /** The theme's background. The terminal's own is clear when the window shows through it. */
+  background: () => string,
   onNotify: (highlight: Highlight, line: string) => void,
 ): IDisposable {
   let compiledFrom: readonly Highlight[] | undefined;
@@ -108,7 +105,6 @@ export function startHighlights(
     }
     const matches = findMatches(text, compiled);
     if (!matches.length) return;
-    const background = String(terminal.options.theme?.background ?? "#000000");
     for (const { rule, start, end } of matches) {
       const { highlight } = compiled[rule]!;
       const color = tabColors.find((option) => option.id === highlight.color)?.value ?? tabColors[0]!.value;
@@ -121,7 +117,7 @@ export function startHighlights(
           marker,
           x: columns[from]!,
           width: columns[to - 1]! - columns[from]! + 1,
-          backgroundColor: mix(color, background, 0.4),
+          backgroundColor: mix(color, background(), 0.4),
           overviewRulerOptions: { color },
         });
         if (!decoration) {

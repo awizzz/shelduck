@@ -24,13 +24,14 @@ export function lookFor(preferences: AppearancePreferences, profileId: string | 
 
 /**
  * The settings a window draws with: an admin window marks itself with a red accent, and
- * with a Windows contrast theme on, every terminal wears a high contrast one.
+ * with a Windows contrast theme on, every terminal wears a high contrast one, with nothing
+ * showing through it.
  */
 export function windowLook(preferences: AppearancePreferences, administrator: boolean, contrast?: "dark" | "light"): AppearancePreferences {
   let look = preferences;
   if (contrast && preferences.followContrastThemes) {
     const theme = resolveTheme(contrast === "dark" ? "high-contrast-dark" : "high-contrast-light");
-    look = { ...look, themeId: theme.id, accent: theme.accent, profileLooks: {}, terminalOpacity: 1 };
+    look = { ...look, themeId: theme.id, accent: theme.accent, profileLooks: {}, terminalOpacity: 1, backgroundMode: look.backgroundMode === "image" ? "solid" : look.backgroundMode };
   }
   return administrator && preferences.markAdministratorWindows ? { ...look, accent: ADMIN_ACCENT } : look;
 }
