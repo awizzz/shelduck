@@ -31,7 +31,7 @@ Download the latest installer from [Releases](https://github.com/awizzz/shelduck
 Releases are not code-signed yet, so Windows SmartScreen may warn you the first time. Check the file against `SHA256SUMS.txt` from the same release before you continue:
 
 ```powershell
-Get-FileHash '.\Shelduck_3.0.0_x64-setup.exe' -Algorithm SHA256
+Get-FileHash '.\Shelduck_3.1.0_x64-setup.exe' -Algorithm SHA256
 ```
 
 With [Scoop](https://scoop.sh), which installs the portable version and adds the `shelduck` command. `scoop update shelduck` follows new releases:
@@ -52,9 +52,9 @@ From the same [Releases](https://github.com/awizzz/shelduck/releases/latest) pag
 - `arm64` and `aarch64` versions of the three for 64-bit Arm machines
 
 ```sh
-sudo apt install ./Shelduck_3.0.0_amd64.deb
-sudo dnf install ./Shelduck-3.0.0-1.x86_64.rpm
-chmod +x Shelduck_3.0.0_amd64.AppImage && ./Shelduck_3.0.0_amd64.AppImage
+sudo apt install ./Shelduck_3.1.0_amd64.deb
+sudo dnf install ./Shelduck-3.1.0-1.x86_64.rpm
+chmod +x Shelduck_3.1.0_amd64.AppImage && ./Shelduck_3.1.0_amd64.AppImage
 ```
 
 `sha256sum -c SHA256SUMS.txt --ignore-missing` checks what you downloaded. You need a distribution from 2022 or later (glibc 2.35 and WebKitGTK 4.1): Ubuntu 22.04, Debian 12, Fedora 36 or newer. AppImages need FUSE 2, which Ubuntu 24.04 leaves out: `sudo apt install libfuse2t64`.

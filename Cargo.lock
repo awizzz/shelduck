@@ -4867,7 +4867,7 @@ dependencies = [
 
 [[package]]
 name = "shelduck"
-version = "3.0.0"
+version = "3.1.0"
 dependencies = [
  "base64 0.23.1",
  "libc",
@@ -4893,7 +4893,7 @@ dependencies = [
 
 [[package]]
 name = "shelduck-sh"
-version = "3.0.0"
+version = "3.1.0"
 dependencies = [
  "crossterm",
  "ctrlc",

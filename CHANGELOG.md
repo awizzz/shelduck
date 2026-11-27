@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 3.1.0
+
+A background image worth setting: it fills the window, takes a GIF, and the text over it stays readable.
 
 ### Changed
 
