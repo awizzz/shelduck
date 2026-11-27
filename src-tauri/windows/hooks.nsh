@@ -17,6 +17,16 @@ Var FormerDesktop
   ${AndIf} ${FileExists} "$FormerFolder\uninstall.exe"
     ; Silent: it closes the old app without asking. /UPDATE: it keeps the user's things.
     ExecWait '"$FormerFolder\uninstall.exe" /S /UPDATE _?=$FormerFolder'
+    ; A shell the old app had open can outlive it and hold its own file, which would
+    ; leave the folder behind: it is stopped.
+    ${If} ${FileExists} "$FormerFolder\nebula-sh.exe"
+      Push $R0
+      nsis_tauri_utils::KillProcessCurrentUser "nebula-sh.exe"
+      Pop $R0
+      Pop $R0
+      Sleep 1000
+      Delete "$FormerFolder\nebula-sh.exe"
+    ${EndIf}
     Delete "$FormerFolder\uninstall.exe"
     RMDir "$FormerFolder"
     DeleteRegKey SHCTX "${MANUKEY}\${FORMERNAME}"
