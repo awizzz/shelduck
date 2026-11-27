@@ -6,6 +6,7 @@ import { currentProfileId } from "./profiles";
 import { sanitizeSavedCommands } from "./savedCommands";
 import { sanitizeHighlights } from "./highlights";
 import { download } from "./download";
+import { isBackgroundImage, MAX_BACKGROUND_BLUR } from "./background";
 import type { AppearancePreferences, KeybindingPreferences } from "./types";
 
 /** xterm.js's own: a path or a URL stays whole. */
@@ -81,6 +82,8 @@ export const defaultPreferences: AppearancePreferences = {
   terminalOpacity: 1,
   backgroundMode: "mica",
   backgroundImageOpacity: 0.28,
+  backgroundImageBlur: 0,
+  backgroundImageFit: "fill",
   animationLevel: "full",
   tabDensity: "comfortable",
   tabPosition: "top",
@@ -159,6 +162,8 @@ const themeKeys = [
   "terminalOpacity",
   "backgroundMode",
   "backgroundImageOpacity",
+  "backgroundImageBlur",
+  "backgroundImageFit",
   "animationLevel",
   "tabDensity",
 ] as const satisfies ReadonlyArray<keyof AppearancePreferences>;
@@ -197,8 +202,10 @@ export function sanitizePreferences(value: unknown): AppearancePreferences {
     terminalPadding: numberIn(value.terminalPadding, defaultPreferences.terminalPadding, 0, 40),
     terminalOpacity: numberIn(value.terminalOpacity, defaultPreferences.terminalOpacity, 0.6, 1),
     backgroundMode: oneOf(value.backgroundMode, ["mica", "solid", "image"], defaultPreferences.backgroundMode),
-    backgroundImage: typeof value.backgroundImage === "string" && value.backgroundImage.startsWith("data:image/") && value.backgroundImage.length <= 3_500_000 ? value.backgroundImage : undefined,
-    backgroundImageOpacity: numberIn(value.backgroundImageOpacity, defaultPreferences.backgroundImageOpacity, 0.05, 0.85),
+    backgroundImage: isBackgroundImage(value.backgroundImage) ? value.backgroundImage : undefined,
+    backgroundImageOpacity: numberIn(value.backgroundImageOpacity, defaultPreferences.backgroundImageOpacity, 0.05, 1),
+    backgroundImageBlur: Math.round(numberIn(value.backgroundImageBlur, defaultPreferences.backgroundImageBlur, 0, MAX_BACKGROUND_BLUR)),
+    backgroundImageFit: oneOf(value.backgroundImageFit, ["fill", "fit", "center", "tile"], defaultPreferences.backgroundImageFit),
     animationLevel: oneOf(value.animationLevel, ["full", "reduced", "off"], defaultPreferences.animationLevel),
     tabDensity: oneOf(value.tabDensity, ["comfortable", "compact"], defaultPreferences.tabDensity),
     tabPosition: oneOf(value.tabPosition, ["top", "side"], defaultPreferences.tabPosition),
@@ -285,8 +292,8 @@ export function savePreferences(value: AppearancePreferences): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizePreferences(value)));
   } catch {
-    // A large background image can exceed the storage quota. The current
-    // settings stay active for this run even when they cannot be persisted.
+    // The storage can be full: builds before 3.1 kept the background image in it. The
+    // current settings stay active for this run even when they cannot be persisted.
   }
 }
 

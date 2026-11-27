@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- the background image is redone. It covers the whole window, tabs included, and the text stays readable over it. Image visibility says how much of it shows behind the text, up to all of it
+- it takes JPEG, PNG, GIF, WebP, BMP, SVG and ICO files, up to 40 MB, and an animated GIF keeps moving. AVIF works on Windows; on Linux that depends on the system's WebKitGTK
+- two new settings: a blur, and how the picture fits the window (fill, fit, center or tile). A small preview of the window in Settings shows the result as you move the sliders
+- the picture is kept as you chose it, no longer as a shrunk copy. One chosen in an earlier version stays until you change it
+
+### Fixed
+
+- on a see-through terminal (a background image, or Background opacity under 100%), dim, italic and overlined text no longer sits in a dark box, the text is as sharp as on an opaque terminal, and selected text keeps the selection color instead of turning dark
+- highlights keep their tint on a see-through terminal
+- Find tints the matches it isn't on instead of painting them in the accent color, so their text stays readable
+- the thin white line beside the scrollbar is gone
+
 ## 3.0.0
 
 Nebula Terminal is now Shelduck. A new name and a new look; what you had set up comes along.

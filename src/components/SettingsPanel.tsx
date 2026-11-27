@@ -22,6 +22,8 @@ import type { AppearancePreferences, CustomProfile, CustomProfileDraft, CustomPr
 import { savedCommandLabel } from "../savedCommands";
 import { backupDocument, readBackup, type Backup } from "../backup";
 import { download } from "../download";
+import { forgetBackgroundImage, MAX_BACKGROUND_BLUR, MAX_BACKGROUND_BYTES, saveBackgroundImage } from "../background";
+import { BackgroundPreview } from "./BackgroundImage";
 import { fileManagerName, isWindows } from "../platform";
 
 /** How profile fields name environment variables on this system. */
@@ -56,6 +58,8 @@ interface SettingsPanelProps {
   quickTerminalProblem?: string | null;
   /** Settings sync, in the window that runs it (the main one). */
   sync?: { problem: string | null; choose: () => void };
+  /** The background image the window draws, and the theme it draws it under. */
+  backdrop?: { url: string; theme: TerminalTheme };
 }
 
 export type SettingsPage = "appearance" | "terminal" | "profiles" | "keyboard" | "behavior" | "about";
@@ -73,28 +77,6 @@ const monospaceFonts = isWindows
   ? ["IBM Plex Mono", "Cascadia Mono", "Cascadia Code", "Consolas", "JetBrains Mono", "Fira Code", "Source Code Pro", "Iosevka", "Hack", "Lucida Console"]
   : ["IBM Plex Mono", "DejaVu Sans Mono", "Ubuntu Mono", "Noto Sans Mono", "Liberation Mono", "JetBrains Mono", "Fira Code", "Source Code Pro", "Iosevka", "Hack", "Cascadia Code"];
 const REPOSITORY = "https://github.com/awizzz/shelduck";
-
-/**
- * Re-encodes a background image so it fits comfortably in local storage next to the
- * other settings: at most 2560 px on the long side, WebP, under ~3 MB as a data URL.
- */
-async function shrinkImage(file: File): Promise<string> {
-  const bitmap = await createImageBitmap(file);
-  let scale = Math.min(1, 2560 / Math.max(bitmap.width, bitmap.height));
-  for (let quality = 0.86; ; quality -= 0.12) {
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-    canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    const url = canvas.toDataURL("image/webp", quality);
-    if (url.length <= 3_000_000 || quality < 0.4) {
-      bitmap.close();
-      if (url.length > 3_000_000) throw new Error("Image too large");
-      return url;
-    }
-    scale *= 0.8;
-  }
-}
 
 /** What the settings search looks for, in lower case, and whether the group it's in matched. */
 const SearchContext = createContext<{ words: string[]; group: string; groupMatches: boolean }>({ words: [], group: "", groupMatches: false });
@@ -661,7 +643,7 @@ function CustomProfilesGroup({ profiles, defaultProfileId, onDefaultRemoved, onP
   );
 }
 
-export default function SettingsPanel({ open, initialPage, profiles, preferences, onChange, onClose, onReset, onClearSession, onProfilesChanged, launchers, defaultTerminal, onDefaultTerminalChange, administrator = false, workspaces, onWorkspacesChange, quickTerminalProblem = null, sync }: SettingsPanelProps) {
+export default function SettingsPanel({ open, initialPage, profiles, preferences, onChange, onClose, onReset, onClearSession, onProfilesChanged, launchers, defaultTerminal, onDefaultTerminalChange, administrator = false, workspaces, onWorkspacesChange, quickTerminalProblem = null, sync, backdrop }: SettingsPanelProps) {
   const [page, setPage] = useState<SettingsPage>("appearance");
   const [query, setQuery] = useState("");
   const words = useMemo(() => query.toLowerCase().split(/\s+/).filter(Boolean), [query]);
@@ -755,16 +737,19 @@ export default function SettingsPanel({ open, initialPage, profiles, preferences
     }
   };
 
+  const removeBackground = () => {
+    onChange((current) => ({ ...current, backgroundImage: undefined, backgroundMode: isWindows ? "mica" : "solid" }));
+    void forgetBackgroundImage().catch(() => undefined);
+  };
   const readBackground = async (file?: File) => {
     if (!file) return;
-    if (!file.type.startsWith("image/")) return setMessage({ tone: "error", text: "Choose an image file." });
-    if (file.size > 40_000_000) return setMessage({ tone: "error", text: "Choose an image smaller than 40 MB." });
+    if (file.size > MAX_BACKGROUND_BYTES) return setMessage({ tone: "error", text: "Choose an image smaller than 40 MB." });
     try {
-      const backgroundImage = await shrinkImage(file);
+      const backgroundImage = await saveBackgroundImage(file);
       onChange((current) => ({ ...current, backgroundMode: "image", backgroundImage }));
       setMessage(null);
     } catch {
-      setMessage({ tone: "error", text: "This image could not be read." });
+      setMessage({ tone: "error", text: "This image can't be shown here. Try a JPEG, PNG, GIF or WebP." });
     }
   };
 
@@ -846,14 +831,23 @@ export default function SettingsPanel({ open, initialPage, profiles, preferences
                     />
                   </Row>
                   {preferences.backgroundMode === "image" && preferences.backgroundImage && <>
-                    <Row label="Background image">
-                      <div className="button-row">
-                        <button className="button" type="button" onClick={() => imageInputRef.current?.click()}>Change…</button>
-                        <button className="button" type="button" onClick={() => onChange({ ...preferences, backgroundImage: undefined, backgroundMode: isWindows ? "mica" : "solid" })}>Remove</button>
+                    <Row label="Background image" stacked>
+                      <div className="background-choice">
+                        {backdrop && <BackgroundPreview url={backdrop.url} look={preferences} theme={backdrop.theme} />}
+                        <div className="button-row">
+                          <button className="button" type="button" onClick={() => imageInputRef.current?.click()}>Change…</button>
+                          <button className="button" type="button" onClick={removeBackground}>Remove</button>
+                        </div>
                       </div>
                     </Row>
                     <Row label="Image visibility">
-                      <Slider label="Image visibility" value={preferences.backgroundImageOpacity} min={0.05} max={0.8} step={0.01} format={(value) => `${Math.round(value * 100)}%`} onChange={(value) => patch("backgroundImageOpacity", value)} />
+                      <Slider label="Image visibility" value={preferences.backgroundImageOpacity} min={0.05} max={1} step={0.01} format={(value) => `${Math.round(value * 100)}%`} onChange={(value) => patch("backgroundImageOpacity", value)} />
+                    </Row>
+                    <Row label="Image blur">
+                      <Slider label="Image blur" value={preferences.backgroundImageBlur} min={0} max={MAX_BACKGROUND_BLUR} step={1} format={(value) => value ? `${value} px` : "Off"} onChange={(value) => patch("backgroundImageBlur", value)} />
+                    </Row>
+                    <Row label="Image fit">
+                      <Segmented label="Image fit" value={preferences.backgroundImageFit} onChange={(value) => patch("backgroundImageFit", value)} options={[{ value: "fill", label: "Fill" }, { value: "fit", label: "Fit" }, { value: "center", label: "Center" }, { value: "tile", label: "Tile" }]} />
                     </Row>
                   </>}
                   <Row label="Tabs">

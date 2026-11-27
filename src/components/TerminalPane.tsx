@@ -5,7 +5,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { SearchAddon } from "@xterm/addon-search";
 import { validPattern } from "./SearchBar";
 import { WebLinksAddon } from "@xterm/addon-web-links";
-import { WebglAddon } from "@xterm/addon-webgl";
+import type { WebglAddon } from "@xterm/addon-webgl";
 import { Unicode11Addon } from "@xterm/addon-unicode11";
 import { ClipboardAddon, type IClipboardProvider } from "@xterm/addon-clipboard";
 import { SerializeAddon } from "@xterm/addon-serialize";
@@ -21,12 +21,14 @@ import { previewSession } from "../preview-session";
 import { startLog, type PaneLog } from "../paneLog";
 import { commandInput } from "../savedCommands";
 import { commandMarkdown, formatElapsed } from "../notify";
+import { mix } from "../color";
 import { startHighlights } from "../highlights";
 import { startMarkMode, type MarkMode } from "../markMode";
 import { folderParts } from "../recentFolders";
 import { drawsText } from "../splash";
 import { parseProgress, type Progress } from "../progress";
 import { resolveTheme, xtermTheme } from "../themes";
+import { loadWebgl } from "../webgl";
 import type { AppearancePreferences, Highlight, MovedPane, PtyEvent, TerminalProfile } from "../types";
 
 interface TerminalPaneProps {
@@ -107,6 +109,9 @@ interface MarkedCommand {
 
 /** Commands kept per pane; older ones are forgotten (their lines usually left the scrollback too). */
 const MAX_MARKED_COMMANDS = 500;
+
+/** Whether something shows through the terminal: the window's background, or an image. */
+const isTranslucent = (preferences: AppearancePreferences) => preferences.terminalOpacity < 1 || preferences.backgroundMode === "image";
 
 /** Falls back to the bundled Nerd Font icons for glyphs the user's font lacks. */
 function withSymbols(fontFamily: string): string {
@@ -251,7 +256,7 @@ export default function TerminalPane({
   callbacksRef.current = { onFontSizeDelta, onPaneZoom, onTitleChange, onActivity, onOutput, onSearchResult, onContextMenu, onCommandFinished, onNotify, onFolderChange, onInput, onNotice, onReady, onProgress, onLog, onHighlight };
 
   const theme = useMemo(() => resolveTheme(preferences.themeId, preferences.customThemes), [preferences.customThemes, preferences.themeId]);
-  const translucent = preferences.terminalOpacity < 1;
+  const translucent = isTranslucent(preferences);
   // A translucent terminal lets the workspace paint the background; an opaque one keeps
   // xterm's own background so glyphs get subpixel antialiasing.
   const colors = useMemo(() => {
@@ -260,6 +265,8 @@ export default function TerminalPane({
   }, [preferences.accent, theme, translucent]);
   const colorsRef = useRef(colors);
   colorsRef.current = colors;
+  const themeRef = useRef(theme);
+  themeRef.current = theme;
 
   useEffect(() => {
     const host = hostRef.current;
@@ -268,7 +275,7 @@ export default function TerminalPane({
 
     const terminal = new Terminal({
       allowProposedApi: true,
-      allowTransparency: preferencesRef.current.terminalOpacity < 1,
+      allowTransparency: isTranslucent(preferencesRef.current),
       screenReaderMode: preferencesRef.current.screenReaderMode,
       cursorBlink: preferencesRef.current.cursorBlink,
       cursorStyle: preferencesRef.current.cursorStyle,
@@ -818,7 +825,7 @@ export default function TerminalPane({
     };
     window.addEventListener("shelduck:insert-paths", insertDropped);
 
-    const highlights = startHighlights(terminal, () => preferencesRef.current.highlights, (highlight, line) => callbacksRef.current.onHighlight?.(highlight, line));
+    const highlights = startHighlights(terminal, () => preferencesRef.current.highlights, () => themeRef.current.background, (highlight, line) => callbacksRef.current.onHighlight?.(highlight, line));
 
     // Logging to a file: Rust keeps the file, this side sends it finished lines.
     let log: { id: number; writer: PaneLog } | undefined;
@@ -1040,9 +1047,7 @@ export default function TerminalPane({
     if (!terminal || !preferences.gpuAcceleration) return;
     let webgl: WebglAddon | undefined;
     try {
-      webgl = new WebglAddon();
-      webgl.onContextLoss(() => webgl?.dispose());
-      terminal.loadAddon(webgl);
+      webgl = loadWebgl(terminal);
     } catch {
       webgl = undefined;
     }
@@ -1084,10 +1089,9 @@ export default function TerminalPane({
       wholeWord: searchRequest.wholeWord,
       regex: searchRequest.regex,
       decorations: {
-        matchBackground: `${accent}55`,
-        matchBorder: `${accent}00`,
+        // xterm takes opaque colors only. The match the search is on gets the selection's.
+        matchBackground: mix(accent, theme.background, 0.18),
         matchOverviewRuler: accent,
-        activeMatchBackground: accent,
         activeMatchBorder: accent,
         activeMatchColorOverviewRuler: accent,
       },
@@ -1098,7 +1102,7 @@ export default function TerminalPane({
     }
     if (searchRequest.backwards) search.findPrevious(searchRequest.query, options);
     else search.findNext(searchRequest.query, options);
-  }, [preferences.accent, searchRequest?.backwards, searchRequest?.nonce, searchRequest?.query, searchRequest?.caseSensitive, searchRequest?.wholeWord, searchRequest?.regex]);
+  }, [preferences.accent, theme.background, searchRequest?.backwards, searchRequest?.nonce, searchRequest?.query, searchRequest?.caseSensitive, searchRequest?.wholeWord, searchRequest?.regex]);
 
   /** Starts the shell again, under what the pane showed. */
   const restart = useCallback((manual: boolean) => {

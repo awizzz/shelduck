@@ -78,6 +78,8 @@ export interface ProfileFieldError {
 }
 
 export type BackgroundMode = "mica" | "solid" | "image";
+/** How a background image is laid out in the window: covering it, whole, at its own size, or repeated. */
+export type BackgroundFit = "fill" | "fit" | "center" | "tile";
 export type AnimationLevel = "full" | "reduced" | "off";
 export type CursorStyle = "block" | "bar" | "underline";
 export type TabDensity = "comfortable" | "compact";
@@ -153,8 +155,13 @@ export interface AppearancePreferences {
   paneTitles: boolean;
   terminalOpacity: number;
   backgroundMode: BackgroundMode;
+  /** The key of the image kept by background.ts, or the data URL builds before 3.1 stored here. */
   backgroundImage?: string;
+  /** How much of the image shows behind the terminal. */
   backgroundImageOpacity: number;
+  /** In pixels. */
+  backgroundImageBlur: number;
+  backgroundImageFit: BackgroundFit;
   animationLevel: AnimationLevel;
   tabDensity: TabDensity;
   /** Tabs across the title bar, or in a list down the left of the window. */

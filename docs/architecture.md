@@ -260,6 +260,8 @@ The terminal finds the interpreter next to its own executable. `scripts/build-si
 | `savedCommands.ts` | Saved commands: checks on what comes back from storage, the `{{blanks}}` asked for before one runs, and the input that runs it. |
 | `paneLog.ts` | Logging a pane: finished lines read from xterm.js's buffer, a second at a time. |
 | `screens.ts` | Each pane's last screen in IndexedDB, for restored sessions. |
+| `background.ts`, `components/BackgroundImage.tsx` | The background image: the file kept in IndexedDB as it was chosen, how much of it shows around and behind the terminal, the layer that draws it and its preview in Settings. |
+| `webgl.ts` | Loading xterm.js's WebGL renderer, and two corrections to what it draws on a see-through terminal. |
 | `tabWatch.ts` | Watching a tab for output or for silence. |
 | `highlights.ts` | Highlights: the patterns, and the decorations put on each line as its line feed is parsed. |
 | `markMode.ts` | Mark mode: where each key moves the mark, and the selection between it and where Shift started. |
@@ -302,7 +304,7 @@ Splitting a pane in the direction of its parent adds a sibling instead of nestin
 
 ### Saved data
 
-Settings and the tab layout are stored in the webview's local storage under the `shelduck.*` keys, and the panes' last screens in its IndexedDB (`shelduck.screens`). Custom profiles are the exception: they live in a file that only Rust writes (see above), because they decide what runs. Everything read back from storage, or from an imported theme file, goes through validation first (`sanitizePreferences`, `loadSession`). Theme files only carry visual settings, never paths or shortcuts.
+Settings and the tab layout are stored in the webview's local storage under the `shelduck.*` keys, and the panes' last screens and the background image in its IndexedDB (`shelduck.screens`, `shelduck.background`). Custom profiles are the exception: they live in a file that only Rust writes (see above), because they decide what runs. Everything read back from storage, or from an imported theme file, goes through validation first (`sanitizePreferences`, `loadSession`). Theme files only carry visual settings, never paths or shortcuts.
 
 ## Security
 

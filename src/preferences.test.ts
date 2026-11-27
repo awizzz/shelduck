@@ -24,6 +24,20 @@ describe("sanitizePreferences", () => {
     expect(result.backgroundImage).toBeUndefined();
   });
 
+  it("keeps a background image by its key, or as the picture older builds stored", () => {
+    const key = "image:3f2b8c1e-5d4a-4b7c-9e2f-0a1b2c3d4e5f";
+    expect(sanitizePreferences({ backgroundImage: key }).backgroundImage).toBe(key);
+    expect(sanitizePreferences({ backgroundImage: "data:image/png;base64,AAAA" }).backgroundImage).toBe("data:image/png;base64,AAAA");
+    expect(sanitizePreferences({ backgroundImage: "image:../../screens" }).backgroundImage).toBeUndefined();
+    expect(sanitizePreferences({ backgroundImage: "https://example.com/a.png" }).backgroundImage).toBeUndefined();
+  });
+
+  it("bounds how the image is laid out", () => {
+    const result = sanitizePreferences({ backgroundImageOpacity: 4, backgroundImageBlur: 12.6, backgroundImageFit: "stretch" });
+    expect([result.backgroundImageOpacity, result.backgroundImageBlur, result.backgroundImageFit]).toEqual([1, 13, "fill"]);
+    expect(sanitizePreferences({ backgroundImageBlur: 900 }).backgroundImageBlur).toBe(40);
+  });
+
   it("maps retired theme ids", () => {
     expect(sanitizePreferences({ themeId: "paper" }).themeId).toBe("shelduck");
     expect(sanitizePreferences({ themeId: "unknown" }).themeId).toBe("shelduck");

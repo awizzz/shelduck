@@ -122,7 +122,17 @@ kbd { font: inherit; }
 :root[data-animation="off"] .app[data-quick] { animation: none; transition: none; }
 @keyframes quick-drop { from { transform: translateY(-100%); } }
 :root[data-host="native"][data-background="mica"] .app { background: color-mix(in srgb, var(--chrome) 55%, transparent); }
-.app__image { position: absolute; inset: 0; z-index: 0; background-size: cover; background-position: center; pointer-events: none; }
+.background-image { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.background-image > div { position: absolute; inset: 0; background: center / cover no-repeat; }
+.background-image[data-fit="fit"] > div { background-size: contain; }
+.background-image[data-fit="center"] > div { background-size: auto; }
+.background-image[data-fit="tile"] > div { background-size: auto; background-repeat: repeat; }
+
+/* The window in small, in the settings. Its first layer has the window's size, scaled down. */
+.background-choice { align-self: stretch; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.background-preview { position: relative; flex: none; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--chrome); }
+.background-preview__window { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
+.background-preview .theme-card__preview { position: absolute; inset: 12px 0 0; margin: 0; border-radius: 0; }
 
 /* ---------- Titlebar and tabs ---------- */
 
