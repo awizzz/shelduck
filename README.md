@@ -183,7 +183,7 @@ All of these except going to a tab by number, moving between panes and opening l
 
 ## What's next
 
-Next up: one history of the commands from every shell, recording a pane to play back or share, a portable copy that keeps its settings next to it, and tabs from the keyboard. The winget package is in review. See the [roadmap](docs/roadmap.md), and open an issue for anything you'd like to see.
+Next up: one history of the commands from every shell, recording a pane to play back or share, a portable copy that keeps its settings next to it, and tabs from the keyboard. A winget package comes after. See the [roadmap](docs/roadmap.md), and open an issue for anything you'd like to see.
 
 ## Build from source
 

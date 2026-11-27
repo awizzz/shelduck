@@ -8,7 +8,7 @@ Shelduck covers daily use: shells, scripts, tabs, mixed splits, several windows,
 - **Record a pane:** keep what a pane prints with its timing, play it back in a tab, or export it as an asciinema `.cast` file to share a demo or a bug.
 - **A portable copy that stays portable:** the portable zip keeps its settings in a folder next to the app, so it can live on a USB stick.
 - **Tabs from the keyboard:** `F2` renames the tab in front, and two shortcuts move it left or right.
-- **The winget package:** `winget install Awizz.Shelduck`, once Microsoft's reviewers get to it. Scoop already works (see the README).
+- **The winget package:** `winget install Awizz.Shelduck`, once it is sent in and Microsoft's reviewers get to it. Scoop already works (see the README).
 
 ## Then (3.2)
 
