@@ -13,6 +13,15 @@
       <Directory Id="FormerProgramsFolder" Name="Nebula Terminal" />
     </DirectoryRef>
 
+    <!-- Through an update, Tauri only puts the desktop shortcut back when one named after
+         the app is still there. Coming from Nebula Terminal, the one to look for has its name. -->
+    <Property Id="FORMERDESKTOPSHORTCUT" Secure="yes">
+      <DirectorySearch Id="FormerDesktopShortcutSearch" Path="[DesktopFolder]" Depth="0">
+        <FileSearch Id="FormerDesktopShortcutFile" Name="Nebula Terminal.lnk" />
+      </DirectorySearch>
+    </Property>
+    <SetProperty Id="DESKTOPSHORTCUTEXISTS" Value="1" After="AppSearch" Sequence="both">FORMERDESKTOPSHORTCUT</SetProperty>
+
     <DirectoryRef Id="INSTALLDIR">
       <Component Id="LauncherCleanup" Guid="*">
         <RegistryValue Root="HKCU" Key="Software\Shelduck" Name="Launcher Cleanup" Type="integer" Value="1" KeyPath="yes" />
