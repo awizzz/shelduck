@@ -31,7 +31,7 @@ strsim = "0.11.1"
 sysinfo = { version = "0.40.4", default-features = false, features = ["system"] }
 terminal_size = "0.4.4"
 unicode-width = "0.2.2"
-uucore = "0.12.0"
+uucore = "0.13.0"
 walkdir = "2.5.0"
 
 # GNU coreutils, reimplemented by the uutils project. Only utilities that
