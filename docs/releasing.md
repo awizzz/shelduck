@@ -47,7 +47,7 @@ SHA256SUMS.txt
 When the repository is public, each file also gets a GitHub build-provenance attestation:
 
 ```powershell
-gh attestation verify '.\Shelduck_3.0.0_x64-setup.exe' --repo awizzz/shelduck
+gh attestation verify '.\Shelduck_3.1.0_x64-setup.exe' --repo awizzz/shelduck
 ```
 
 Releases are not Authenticode-signed yet. Never commit certificates, signing tokens or private keys.
