@@ -6,14 +6,18 @@ use sysinfo::{
     Pid, ProcessRefreshKind, ProcessesToUpdate, RefreshKind, Signal, System, UpdateKind,
 };
 
-fn system() -> System {
-    System::new_with_specifics(
-        RefreshKind::nothing().with_processes(
-            ProcessRefreshKind::nothing()
-                .with_memory()
-                .with_exe(UpdateKind::OnlyIfNotSet),
-        ),
-    )
+/// The running processes, or `None` once `command` has said why it cannot list them.
+fn system(command: &str) -> Option<System> {
+    let processes = ProcessRefreshKind::nothing()
+        .with_memory()
+        .with_exe(UpdateKind::OnlyIfNotSet);
+    match System::new_with_specifics(RefreshKind::nothing().with_processes(processes)) {
+        Ok(system) => Some(system),
+        Err(error) => {
+            eprintln!("{command}: cannot list the processes: {error}");
+            None
+        }
+    }
 }
 
 fn human_memory(bytes: u64) -> String {
@@ -32,7 +36,9 @@ pub fn ps(args: &[String]) -> i32 {
         );
         return 0;
     }
-    let mut system = system();
+    let Some(mut system) = system("ps") else {
+        return 1;
+    };
     system.refresh_processes_specifics(
         ProcessesToUpdate::All,
         true,
@@ -144,7 +150,9 @@ pub fn kill(args: &[String]) -> i32 {
         eprintln!("kill: usage: kill [-s SIGNAL | -SIGNAL] PID…");
         return 2;
     }
-    let mut system = system();
+    let Some(mut system) = system("kill") else {
+        return 1;
+    };
     system.refresh_processes(ProcessesToUpdate::All, true);
     let mut status = 0;
     for pid in pids {
@@ -175,7 +183,9 @@ pub fn killall(name: &str, args: &[String]) -> i32 {
         eprintln!("Usage: {name} NAME…");
         return 2;
     }
-    let mut system = system();
+    let Some(mut system) = system(name) else {
+        return 1;
+    };
     system.refresh_processes(ProcessesToUpdate::All, true);
     let me = std::process::id();
     let mut killed = 0;
